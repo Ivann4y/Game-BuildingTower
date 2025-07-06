@@ -2,9 +2,12 @@ package logic;
 
 import data.*;
 import java.util.*;
+import java.util.Deque;
+import java.util.LinkedList;
 
 public class GameManager {
 //    public Stack<Block> towerStack = new Stack<>();
+//public Deque<Block> towerStack = new LinkedList<>();
     public CircularBlockList towerStack = new CircularBlockList(10);
     public Queue<BlockType> upcomingBlocks = new LinkedList<>();
     public List<GameScore> highScores = new LinkedList<>();
@@ -40,6 +43,20 @@ public class GameManager {
         upcomingBlocks.offer(getRandomBlockType());
         return nextType;
     }
+
+//    public void resetTower() {
+//        towerStack.clear();
+//        towerStack.push(new Block(350, 550, baseBlockWidth, 15, BlockType.PERUMAHAN, balokAbu));
+//
+//    }
+//
+//    public void prepareNextHangingBlock() {
+//        blockIsFalling = false;
+//        BlockType nextType = upcomingBlocks.poll();
+//        upcomingBlocks.offer(getRandomBlockType());
+//        int lastWidth = towerStack.peek().width;
+//        hangingBlock = new Block(craneX - (lastWidth / 2), 100, lastWidth, 15, nextType, getImageForType(nextType));
+//    }
 
     private BlockType getRandomBlockType() {
         return BlockType.values()[new Random().nextInt(BlockType.values().length)];

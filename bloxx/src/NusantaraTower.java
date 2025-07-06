@@ -18,8 +18,6 @@ public class NusantaraTower extends JPanel implements Runnable {
 
     private Image backgroundImage;
     private BufferedImage balokAbu, balokUngu, balokJendela, balokAtap;
-    private long lastUpdateTime = System.nanoTime();
-
 
     public NusantaraTower() {
         setPreferredSize(new Dimension(800, 600));
@@ -52,42 +50,27 @@ public class NusantaraTower extends JPanel implements Runnable {
         gameThread.start();
     }
 
-    private int getTowerLeftLimit() {
-        return 350;  // area city grid
-    }
-
-    private int getTowerRightLimit(int w) {
-        return w - 300;  // area HUD
-    }
-
-    private int getTowerAreaCenter(int w) {
-        return (getTowerLeftLimit() + getTowerRightLimit(w)) / 2;
-    }
-
     @Override
     public void addNotify() {
         super.addNotify();
-        game.initGame();
+        new Timer(10, e -> {
+            if (getWidth() > 0 && getHeight() > 0 && game.towerStack.isEmpty()) {
+                game.initGame();
+                startNewTower();
+                game.gameState = GameState.PLAYING;
 
-        // Tunggu panel di-layout, lalu start tower
-        SwingUtilities.invokeLater(() -> {
-            startNewTower();
-
-            gameThread = new Thread(this);
-            gameThread.start();
-        });
+                gameThread = new Thread(this);
+                gameThread.start();
+                ((Timer) e.getSource()).stop(); // hentikan timer
+            }
+        }).start();
     }
 
     private void startNewTower() {
         int w = getWidth();
+        if (w <= 0) w = 800;
         int h = getHeight();
-
-        if (w <= 0 || h <= 0) {
-            // Panel belum di-layout → tunda startNewTower sampai layout selesai
-            SwingUtilities.invokeLater(this::startNewTower);
-            return;
-        }
-
+        if (h <= 0) h = 600;
         game.craneX = w / 2;
         game.craneDirection = 1;
         game.craneSpeedMultiplier = 1;
@@ -95,21 +78,18 @@ public class NusantaraTower extends JPanel implements Runnable {
         game.gameState = GameState.PLAYING;
         game.blocksPlacedThisLevel = 0;
 
-        resetTower(w, h);
+        resetTower(w, h); // kirim width & height ke resetTower
         prepareNextHangingBlock();
     }
 
     private void resetTower(int w, int h) {
         game.towerStack.clear();
-
-        int baseX = getTowerAreaCenter(w) - (game.baseBlockWidth / 2);
-        int baseY = h - 50; // Jarak dari bawah
-        if (baseY <= 0) baseY = 550; // fallback aman (jarang kepakai)
-
+        int baseX = (w / 2) - (game.baseBlockWidth / 2);
+        int baseY = h - 50;
+        if (baseY <= 0) baseY = 550;
         Block baseBlock = new Block(baseX, baseY, game.baseBlockWidth, 50, BlockType.PERUMAHAN, balokAbu);
         game.towerStack.push(baseBlock);
     }
-
 
     private void prepareNextHangingBlock() {
         game.blockIsFalling = false;
@@ -119,14 +99,13 @@ public class NusantaraTower extends JPanel implements Runnable {
 
         game.hangingBlock = new Block(
                 game.craneX - (lastWidth / 2),
-                100, // posisi awal atas
+                100,
                 lastWidth,
                 50,
                 nextType,
                 img
         );
     }
-
 
     private BufferedImage getImageForType(BlockType type) {
         return switch (type) {
@@ -229,35 +208,23 @@ public class NusantaraTower extends JPanel implements Runnable {
     @Override
     public void run() {
         while (true) {
-            if (getWidth() > 0 && getHeight() > 0) {
-                if (game.gameState == GameState.PLAYING && !game.showingUpgrades) {
-                    updateGame();
-                }
-                repaint();
+            if (game.gameState == GameState.PLAYING && !game.showingUpgrades) {
+                updateGame();
             }
-            try { Thread.sleep(16); } catch (Exception e) { e.printStackTrace(); }
+            repaint();
+            try {
+                Thread.sleep(16);
+            } catch (Exception e) { e.printStackTrace(); }
         }
     }
 
     private void updateGame() {
-        int w = getWidth();
-        if (w <= 0) return; // panel belum siap
-
-        int leftLimit = getTowerLeftLimit();
-        int rightLimit = getTowerRightLimit(w);
-
         if (!game.blockIsFalling) {
-            game.craneX += 4 * game.craneDirection * game.craneSpeedMultiplier;
+            game.craneX += 3 * game.craneDirection * game.craneSpeedMultiplier;
+            if (game.craneX > getWidth() - 150 || game.craneX < 150)
+                game.craneDirection *= -1;
 
-            if (game.craneX >= rightLimit) {
-                game.craneX = rightLimit;
-                game.craneDirection = -1;
-            } else if (game.craneX <= leftLimit) {
-                game.craneX = leftLimit;
-                game.craneDirection = 1;
-            }
-
-            game.hangingBlock.x = game.craneX - (game.hangingBlock.width / 2);
+            game.hangingBlock.x = game.craneX - game.hangingBlock.width / 2;
         } else {
             game.hangingBlock.y += 5;
             checkCollision();
