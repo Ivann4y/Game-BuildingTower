@@ -4,7 +4,7 @@ import java.awt.image.BufferedImage;
 
 public class Block {
     public int x, y, width, height;
-    public BlockType type;          // cukup pakai BlockType, karena sudah diimport
+    public BlockType type;
     public BufferedImage image;
 
     public Block(int x, int y, int width, int height, BlockType type, BufferedImage image) {
