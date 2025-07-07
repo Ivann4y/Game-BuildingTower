@@ -9,6 +9,7 @@ public class GameManager {
     public Queue<BlockType> upcomingBlocks = new LinkedList<>();
     public List<GameScore> highScores = new LinkedList<>();
     public GameState gameState = GameState.PLAYING;
+    public boolean isNewHighScore = false;
 
     public int blocksPlacedThisLevel = 0;
     public long currentScore = 0;

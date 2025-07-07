@@ -212,9 +212,27 @@ public class NusantaraTower extends JPanel implements Runnable {
     }
 
     private void addFinalScore() {
-        game.highScores.addFirst(new GameScore(game.currentScore));
+        if (game.currentScore <= 0) {
+            game.isNewHighScore = false; // Pastikan flag-nya false
+            return; // Keluar dari method, tidak ada yang perlu ditambahkan
+        }
+
+        // Kode di bawah ini hanya akan berjalan jika skor > 0
+        GameScore newScore = new GameScore(game.currentScore);
+        game.highScores.add(newScore);
+
+        // Urutkan dan potong
         game.highScores.sort((a, b) -> Long.compare(b.score, a.score));
-        while (game.highScores.size() > 5) game.highScores.removeLast();
+        while (game.highScores.size() > 5) {
+            game.highScores.removeLast();
+        }
+// Cek apakah newScore masuk top 5
+        game.isNewHighScore = game.highScores.contains(newScore);
+        // Tambahkan debug print
+        System.out.println("High Scores:");
+        for (GameScore gs : game.highScores) {
+            System.out.println(" - " + gs.score);
+        }
     }
 
     private volatile boolean running = true;
@@ -371,20 +389,66 @@ public class NusantaraTower extends JPanel implements Runnable {
             case GAME_OVER -> {
                 title = "GAME OVER";
                 sub = "Tekan [ENTER] untuk Mulai Ulang";
+                // 1. Gambar "Skor Kamu" terlebih dahulu di posisi dasarnya.
+                String currentScoreText = "Skor Kamu: " + game.currentScore;
+                g.setColor(Color.WHITE);
+                g.setFont(new Font("Arial", Font.BOLD, 26));
+                int cw = g.getFontMetrics().stringWidth(currentScoreText);
+                g.drawString(currentScoreText, (getWidth() - cw) / 2, 240);
+
+                // 2. Jika ini adalah high score baru, gambar notifikasinya DI BAWAH skor.
+                if (game.isNewHighScore) {
+                    g.setColor(Color.YELLOW);
+                    g.setFont(new Font("Arial", Font.BOLD, 28));
+                    // Karakter '🎉' mungkin tidak tampil di semua sistem, lebih aman tanpa.
+                    String notif = "New High Score!";
+                    int nw = g.getFontMetrics().stringWidth(notif);
+                    // Beri jarak yang cukup, misalnya 275 (35 piksel di bawah skor).
+                    g.drawString(notif, (getWidth() - nw) / 2, 275);
+                }
+
+                // --- AKHIR BAGIAN PERBAIKAN ---
             }
             case TOWER_COMPLETE -> {
                 title = "MENARA SELESAI!";
                 sub = "Tekan [ENTER] untuk Lanjut";
+                String currentScoreText = "Skor Kamu: " + game.currentScore;
+                g.setColor(Color.WHITE);
+                g.setFont(new Font("Arial", Font.BOLD, 26));
+                int cw = g.getFontMetrics().stringWidth(currentScoreText);
+                g.drawString(currentScoreText, (getWidth() - cw) / 2, 240);
+
             }
             case TOWER_FAILED -> {
                 title = "MENARA GAGAL!";
                 sub = "Tekan [ENTER] untuk Coba Lagi";
+                String currentScoreText = "Skor Kamu: " + game.currentScore;
+                g.setColor(Color.WHITE);
+                g.setFont(new Font("Arial", Font.BOLD, 26));
+                int cw = g.getFontMetrics().stringWidth(currentScoreText);
+                g.drawString(currentScoreText, (getWidth() - cw) / 2, 240);
+
             }
+
         }
+
         int w = g.getFontMetrics().stringWidth(title);
         g.drawString(title, (getWidth() - w) / 2, 150);
         g.setFont(new Font("Arial", Font.BOLD, 24));
         int sw = g.getFontMetrics().stringWidth(sub);
         g.drawString(sub, (getWidth() - sw) / 2, 200);
+
+        g.setFont(new Font("Arial", Font.PLAIN, 20));
+        g.setColor(Color.WHITE);
+        g.drawString("Top 5 High Scores:", 30, getHeight() - 100);
+
+        int y = getHeight() - 80;
+        int rank = 1;
+        for (GameScore gs : game.highScores) {
+            g.drawString(rank + ". " + gs.score, 30, y);
+            y += 20;
+            rank++;
+            if (rank > 5) break;
+        }
     }
 }
