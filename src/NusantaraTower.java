@@ -263,11 +263,13 @@ public class NusantaraTower extends JPanel implements Runnable {
         int w = getWidth();
         if (w <= 0) return; // panel belum siap
 
+        game.updateTemporaryEffects();
+
         int leftLimit = getTowerLeftLimit();
         int rightLimit = getTowerRightLimit(w);
 
         if (!game.blockIsFalling) {
-            game.craneX += 4 * game.craneDirection * game.craneSpeedMultiplier;
+            game.craneX += (int)(4 * game.craneDirection * game.craneSpeedMultiplier);
 
             if (game.craneX >= rightLimit) {
                 game.craneX = rightLimit;
@@ -310,6 +312,31 @@ public class NusantaraTower extends JPanel implements Runnable {
         }
     }
 
+    private void drawEffectCountdownBars(Graphics2D g) {
+        int x = getWidth() - 220;  // posisi kanan atas
+        int y = 20;
+
+        for (TemporaryEffect effect : game.activeTemporaryEffects) {
+            float progress = effect.getProgress();
+
+            // background bar
+            g.setColor(new Color(100, 100, 100, 180));
+            g.fillRoundRect(x, y, 200, 20, 10, 10);
+
+            // progress bar
+            g.setColor(new Color(255, 200, 0));
+            g.fillRoundRect(x, y, (int)(200 * progress), 20, 10, 10);
+
+            // text label
+            g.setColor(Color.BLACK);
+            g.setFont(new Font("Arial", Font.PLAIN, 12));
+            g.drawString(effect.name, x + 5, y + 15);
+
+            y += 30; // jarak antar efek
+        }
+    }
+
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -322,6 +349,11 @@ public class NusantaraTower extends JPanel implements Runnable {
         drawTower(g2);
         if (game.gameState != GameState.GAME_OVER) drawCraneAndBlock(g2);
         hud.draw(g2, getWidth());
+
+        if (!game.activeTemporaryEffects.isEmpty()) {
+            drawEffectCountdownBars(g2);
+        }
+
 
         if (game.showingUpgrades) {
             upgradeMenu.draw(g2, getWidth());

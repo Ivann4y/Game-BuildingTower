@@ -22,6 +22,7 @@ public class GameManager {
     //    public Stack<Block> towerStack = new Stack<>();
     public CircularBlockList towerStack = new CircularBlockList(5);
     public Queue<BlockType> upcomingBlocks = new LinkedList<>();
+    public List<TemporaryEffect> activeTemporaryEffects = new ArrayList<>();
     public List<GameScore> highScores = new LinkedList<>();
     public GameState gameState = GameState.PLAYING;
     public boolean isNewHighScore = false;
@@ -33,7 +34,7 @@ public class GameManager {
     public boolean showingUpgrades = false;
     public int craneX = 200;
     public int craneDirection = 1;
-    public int craneSpeedMultiplier = 1;
+    public double craneSpeedMultiplier = 1.0;
     public int baseBlockWidth = 100;
 
     public Block hangingBlock;
@@ -61,12 +62,43 @@ public class GameManager {
         return BlockType.values()[new Random().nextInt(BlockType.values().length)];
     }
 
-    private void buildUpgradeTree() {
-        upgradeTreeRoot = new UpgradeNode("Root", "", 0, ()->{});
-        upgradeTreeRoot.purchased = true;
-        UpgradeNode fastCrane = new UpgradeNode("Crane Cepat", "Kecepatan +50%", 500, () -> craneSpeedMultiplier=2);
-        UpgradeNode widerBlock = new UpgradeNode("Balok Lebih Lebar", "Lebar +20", 800, () -> baseBlockWidth=120);
-        upgradeTreeRoot.addChild(fastCrane); upgradeTreeRoot.addChild(widerBlock);
-        fastCrane.addChild(new UpgradeNode("Crane Super Cepat", "Kecepatan +100%", 2000, () -> craneSpeedMultiplier=3));
+    public void updateTemporaryEffects() {
+        long now = System.currentTimeMillis();
+        Iterator<TemporaryEffect> iter = activeTemporaryEffects.iterator();
+        while (iter.hasNext()) {
+            TemporaryEffect temp = iter.next();
+            if (temp.isExpired()) { // ✅ Pakai method isExpired()
+                if (temp.undo != null) temp.undo.run(); // ✅ Pakai field undo yang sudah dideklarasikan
+                iter.remove();
+            } else if (temp.onUpdate != null) {
+                temp.onUpdate.run(); // ✅ Bisa pakai efek animasi jika ada
+            }
+        }
     }
+
+
+
+    private void buildUpgradeTree() {
+        upgradeTreeRoot = new UpgradeNode("Root", "", 0, () -> {});
+        upgradeTreeRoot.purchased = true;
+
+        UpgradeNode slowCrane = new UpgradeNode("Crane Lambat", "Kecepatan -50% sementara", 500, () -> {
+            TemporaryEffect slowEffect = new TemporaryEffect(
+                    "Crane Lambat",
+                    () -> craneSpeedMultiplier = 0.5,
+                    10000,
+                    () -> craneSpeedMultiplier = 1,
+                    null
+            );
+            activeTemporaryEffects.add(slowEffect);
+        });
+
+
+        UpgradeNode widerBlock = new UpgradeNode("Balok Lebar", "Lebar +20", 800, () -> baseBlockWidth = 120);
+
+        upgradeTreeRoot.addChild(slowCrane);
+        upgradeTreeRoot.addChild(widerBlock);
+    }
+
+
 }
