@@ -5,7 +5,7 @@ import java.util.*;
 
 public class GameManager {
 //    public Stack<Block> towerStack = new Stack<>();
-    public CircularBlockList towerStack = new CircularBlockList(10);
+    public CircularBlockList towerStack = new CircularBlockList(5);
     public Queue<BlockType> upcomingBlocks = new LinkedList<>();
     public List<GameScore> highScores = new LinkedList<>();
     public GameState gameState = GameState.PLAYING;
