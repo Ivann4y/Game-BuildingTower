@@ -48,6 +48,7 @@ public class NusantaraTower extends JPanel implements Runnable {
             }
         });
 
+        game.initFirstBlock();
         gameThread = new Thread(this);
         gameThread.start();
     }
@@ -73,6 +74,7 @@ public class NusantaraTower extends JPanel implements Runnable {
         SwingUtilities.invokeLater(() -> {
             startNewTower();
 
+            game.initFirstBlock();
             gameThread = new Thread(this);
             gameThread.start();
         });

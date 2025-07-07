@@ -2,9 +2,24 @@ package logic;
 
 import data.*;
 import java.util.*;
+import data.Block;
+import data.BlockType;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 public class GameManager {
-//    public Stack<Block> towerStack = new Stack<>();
+
+    public void initFirstBlock() {
+        try {
+            BufferedImage image = ImageIO.read(getClass().getResource("/assets/balokAbu.png"));
+            hangingBlock = new Block(100, 0, 50, 50, BlockType.PERUMAHAN, image);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //    public Stack<Block> towerStack = new Stack<>();
     public CircularBlockList towerStack = new CircularBlockList(5);
     public Queue<BlockType> upcomingBlocks = new LinkedList<>();
     public List<GameScore> highScores = new LinkedList<>();
