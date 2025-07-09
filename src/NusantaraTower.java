@@ -174,9 +174,8 @@ public class NusantaraTower extends JPanel implements Runnable {
         collectAvailable(game.upgradeTreeRoot, list);
         if (index < list.size()) {
             UpgradeNode up = list.get(index);
-            if (!up.purchased && game.currentScore >= up.cost) {
+            if (game.currentScore >= up.cost) {
                 game.currentScore -= up.cost;
-                up.purchased = true;
                 up.effect.run();
             }
         }

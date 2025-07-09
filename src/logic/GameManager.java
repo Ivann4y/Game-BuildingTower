@@ -63,6 +63,8 @@ public class GameManager {
     }
 
     public void updateTemporaryEffects() {
+        if (showingUpgrades) return;
+
         long now = System.currentTimeMillis();
         Iterator<TemporaryEffect> iter = activeTemporaryEffects.iterator();
         while (iter.hasNext()) {
