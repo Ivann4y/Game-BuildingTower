@@ -40,6 +40,12 @@ public class GameManager {
     public Block hangingBlock;
     public UpgradeNode upgradeTreeRoot;
 
+    public int currentLevel = 1;
+
+    public int getTargetForLevel(int level) {
+        return 15 + (level - 1) * 5;
+    }
+
     public GameManager() {
         initGame();
     }

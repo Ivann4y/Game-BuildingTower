@@ -117,7 +117,8 @@ public class NusantaraTower extends JPanel implements Runnable {
         game.blockIsFalling = false;
         BlockType nextType = game.getNextBlockType();
         int lastWidth = game.towerStack.peek().width;
-        BufferedImage img = (game.blocksPlacedThisLevel == 14) ? balokAtap : getImageForType(nextType);
+        int target = game.getTargetForLevel(game.currentLevel);
+        BufferedImage img = (game.blocksPlacedThisLevel == target - 1) ? balokAtap : getImageForType(nextType);
 
         game.hangingBlock = new Block(
                 game.craneX - (lastWidth / 2),
@@ -301,7 +302,8 @@ public class NusantaraTower extends JPanel implements Runnable {
                 int bonus = Math.max(0, 100 - centerDiff * 2);
                 game.currentScore += 10 + bonus;
 
-                if (game.blocksPlacedThisLevel >= 15) {
+                if (game.blocksPlacedThisLevel >= game.getTargetForLevel(game.currentLevel)) {
+                    game.currentLevel++;
                     game.gameState = GameState.TOWER_COMPLETE;
                 } else {
                     prepareNextHangingBlock();
