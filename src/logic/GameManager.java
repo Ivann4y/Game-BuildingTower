@@ -1,9 +1,12 @@
 package logic;
 
 import data.*;
+
 import java.util.*;
+
 import data.Block;
 import data.BlockType;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -58,14 +61,19 @@ public class GameManager {
         // ✅ Inisialisasi suara
         successSound = new AudioPlayer();
         failSound = new AudioPlayer();
+        gameState = GameState.MAIN_MENU;
     }
 
     public void initGame() {
         buildUpgradeTree();
-        for(int i=0; i<3; i++) upcomingBlocks.offer(getRandomBlockType());
-        currentScore=0; playerLives=3; craneDirection=1; craneSpeedMultiplier=1; baseBlockWidth=100;
+        for (int i = 0; i < 3; i++) upcomingBlocks.offer(getRandomBlockType());
+        currentScore = 0;
+        playerLives = 3;
+        craneDirection = 1;
+        craneSpeedMultiplier = 1;
+        baseBlockWidth = 100;
         craneX = 400;
-        gameState=GameState.PLAYING; showingUpgrades=false;
+        showingUpgrades = false;
     }
 
     public BlockType getNextBlockType() {
@@ -93,7 +101,8 @@ public class GameManager {
     }
 
     private void buildUpgradeTree() {
-        upgradeTreeRoot = new UpgradeNode("Root", "", 0, () -> {});
+        upgradeTreeRoot = new UpgradeNode("Root", "", 0, () -> {
+        });
         upgradeTreeRoot.purchased = true;
 
         UpgradeNode slowCrane = new UpgradeNode("Crane Lambat", "Kecepatan -50% sementara", 500, () -> {
