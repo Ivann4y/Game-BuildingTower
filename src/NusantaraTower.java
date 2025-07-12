@@ -8,6 +8,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import audio.AudioPlayer;
 
 public class NusantaraTower extends JPanel implements Runnable {
     private GameManager game;
@@ -19,6 +20,7 @@ public class NusantaraTower extends JPanel implements Runnable {
     private Image backgroundImage;
     private BufferedImage balokAbu, balokUngu, balokJendela, balokAtap;
     private long lastUpdateTime = System.nanoTime();
+    private AudioPlayer backgroundMusic;
 
 
     public NusantaraTower() {
@@ -51,6 +53,8 @@ public class NusantaraTower extends JPanel implements Runnable {
         game.initFirstBlock();
         gameThread = new Thread(this);
         gameThread.start();
+        backgroundMusic = new AudioPlayer();
+        backgroundMusic.playSound("assets/music/background.wav", true);
     }
 
     private int getTowerLeftLimit() {
