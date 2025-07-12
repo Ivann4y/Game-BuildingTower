@@ -173,7 +173,19 @@ public class NusantaraTower extends JPanel implements Runnable {
         } else if (game.gameState == GameState.PLAYING) {
             if (k == KeyEvent.VK_U) {
                 game.showingUpgrades = !game.showingUpgrades;
-            } else if (!game.showingUpgrades && k == KeyEvent.VK_SPACE && !game.blockIsFalling) {
+
+                if (game.showingUpgrades) {
+                    game.upgradeMenuOpenedAt = System.nanoTime();
+                    game.pauseAllEffects(); // ← PAUSE SEMUA
+                } else {
+                    if (game.upgradeMenuOpenedAt != -1) {
+                        long now = System.nanoTime();
+                        game.totalUpgradePauseTime += now - game.upgradeMenuOpenedAt;
+                        game.upgradeMenuOpenedAt = -1;
+                    }
+                    game.resumeAllEffects(); // ← RESUME SEMUA
+                }
+            }else if (!game.showingUpgrades && k == KeyEvent.VK_SPACE && !game.blockIsFalling) {
                 game.blockIsFalling = true;
             } else if (game.showingUpgrades && k >= KeyEvent.VK_1 && k <= KeyEvent.VK_9) {
                 purchaseUpgrade(k - KeyEvent.VK_1);
@@ -306,7 +318,9 @@ public class NusantaraTower extends JPanel implements Runnable {
         int rightLimit = getTowerRightLimit(w);
 
         if (!game.blockIsFalling) {
-            game.craneX += (int) (4 * game.craneDirection * game.craneSpeedMultiplier);
+            int baseSpeed = game.hasSlowerCrane ? 2 : 4;
+            game.craneX += (int) (baseSpeed * game.craneDirection * game.craneSpeedMultiplier);
+
 
             if (game.craneX >= rightLimit) {
                 game.craneX = rightLimit;
@@ -355,7 +369,8 @@ public class NusantaraTower extends JPanel implements Runnable {
         int y = 20;
 
         for (TemporaryEffect effect : game.activeTemporaryEffects) {
-            float progress = effect.getProgress();
+            float progress = effect.isPaused() ? 1.0f : effect.getProgress();
+
 
             // background bar
             g.setColor(new Color(100, 100, 100, 180));

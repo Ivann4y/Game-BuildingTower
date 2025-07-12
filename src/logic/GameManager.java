@@ -45,6 +45,9 @@ public class GameManager {
     public int craneDirection = 1;
     public double craneSpeedMultiplier = 1.0;
     public int baseBlockWidth = 100;
+    public long upgradeMenuOpenedAt = -1;
+    public long totalUpgradePauseTime = 0;
+    public boolean hasSlowerCrane = false;
 
     public Block hangingBlock;
     public UpgradeNode upgradeTreeRoot;
@@ -87,20 +90,19 @@ public class GameManager {
     }
 
     public void updateTemporaryEffects() {
-        if (showingUpgrades) return;
-
-        long now = System.currentTimeMillis();
         Iterator<TemporaryEffect> iter = activeTemporaryEffects.iterator();
         while (iter.hasNext()) {
             TemporaryEffect temp = iter.next();
             if (temp.isExpired()) {
-                if (temp.undo != null) temp.undo.run();
+                temp.expire();
                 iter.remove();
-            } else if (temp.onUpdate != null) {
-                temp.onUpdate.run();
+            } else if (!temp.isPaused()) {
+                temp.applyUpdate();
             }
         }
     }
+
+
 
     private void buildUpgradeTree() {
         upgradeTreeRoot = new UpgradeNode("Root", "", 0, () -> {
@@ -110,19 +112,39 @@ public class GameManager {
         UpgradeNode slowCrane = new UpgradeNode("Crane Lambat", "Kecepatan -50% sementara", 500, () -> {
             TemporaryEffect slowEffect = new TemporaryEffect(
                     "Crane Lambat",
-                    () -> craneSpeedMultiplier = 0.5,
+                    () -> {
+                        craneSpeedMultiplier = 0.5;
+                        hasSlowerCrane = true; // ✅ aktifkan flag
+                    },
                     10000,
-                    () -> craneSpeedMultiplier = 1,
+                    () -> {
+                        craneSpeedMultiplier = 1.0;
+                        hasSlowerCrane = false; // ✅ matikan flag saat efek berakhir
+                    },
                     null
             );
             activeTemporaryEffects.add(slowEffect);
         });
+
 
         UpgradeNode widerBlock = new UpgradeNode("Balok Lebar", "Lebar +20", 800, () -> baseBlockWidth = 120);
 
         upgradeTreeRoot.addChild(slowCrane);
         upgradeTreeRoot.addChild(widerBlock);
     }
+
+    public void pauseAllEffects() {
+        for (TemporaryEffect e : activeTemporaryEffects) {
+            e.pause();
+        }
+    }
+
+    public void resumeAllEffects() {
+        for (TemporaryEffect e : activeTemporaryEffects) {
+            e.resume();
+        }
+    }
+
 
     // ✅ Tambahkan method baru untuk dipanggil ketika balok berhasil ditumpuk
     public void playSuccessSound() {
