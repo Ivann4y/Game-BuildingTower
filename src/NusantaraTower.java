@@ -54,7 +54,7 @@ public class NusantaraTower extends JPanel implements Runnable {
         gameThread = new Thread(this);
         gameThread.start();
         backgroundMusic = new AudioPlayer();
-        backgroundMusic.playSound("assets/music/background.wav", true);
+        backgroundMusic.playSound("/assets/music/background.wav", true);
     }
 
     private int getTowerLeftLimit() {

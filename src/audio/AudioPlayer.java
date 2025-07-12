@@ -1,16 +1,21 @@
 package audio;
 
 import javax.sound.sampled.*;
-import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 
 public class AudioPlayer {
-
     private Clip clip;
 
-    public void playSound(String filePath, boolean loop) {
+    public void playSound(String resourcePath, boolean loop) {
         try {
-            AudioInputStream audioIn = AudioSystem.getAudioInputStream(new File(filePath));
+            URL soundURL = getClass().getResource(resourcePath);
+            if (soundURL == null) {
+                System.err.println("Sound not found: " + resourcePath);
+                return;
+            }
+
+            AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundURL);
             clip = AudioSystem.getClip();
             clip.open(audioIn);
             if (loop) {
