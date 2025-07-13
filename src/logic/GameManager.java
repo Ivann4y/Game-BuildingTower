@@ -82,7 +82,17 @@ public class GameManager {
         showingUpgrades = false;
     }
 
+    private BlockType getRandomBlockType() {
+        return BlockType.values()[new Random().nextInt(BlockType.values().length)];
+    }
+
+
     public BlockType getNextBlockType() {
+        // Cegah null: jika queue kosong, tambahkan dulu
+        if (upcomingBlocks.isEmpty()) {
+            upcomingBlocks.offer(getRandomBlockType());
+        }
+
         BlockType nextType = upcomingBlocks.poll();
         upcomingBlocks.offer(getRandomBlockType());
 
@@ -98,10 +108,6 @@ public class GameManager {
         return nextType;
     }
 
-
-    private BlockType getRandomBlockType() {
-        return BlockType.values()[new Random().nextInt(BlockType.values().length)];
-    }
 
     public void updateTemporaryEffects() {
         Iterator<TemporaryEffect> iter = activeTemporaryEffects.iterator();

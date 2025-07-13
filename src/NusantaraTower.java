@@ -163,7 +163,7 @@ public class NusantaraTower extends JPanel implements Runnable {
         game.blockIsFalling = false;
         BlockType nextType = game.getNextBlockType();
 
-        int lastWidth = game.activeWiderBlock ? game.baseBlockWidth : game.towerStack.peek().width;
+        int lastWidth = game.activeWiderBlock ? game.baseBlockWidth + 20 : game.baseBlockWidth;
         int target = game.getTargetForLevel(game.currentLevel);
         BufferedImage img = (game.blocksPlacedThisLevel == target - 1) ? balokAtap : getImageForType(nextType);
 
@@ -333,14 +333,16 @@ public class NusantaraTower extends JPanel implements Runnable {
 
     private void updateGame() {
         int w = getWidth();
-        if (w <= 0) return;
+        if (w <= 0) return; // panel belum siap
 
         game.updateTemporaryEffects();
-        if (game.forceRefreshHangingBlock) {
-            prepareNextHangingBlock();
-            game.forceRefreshHangingBlock = false;
-        }
 
+        // ✅ Tambahkan pengecekan di sini:
+        if (game.forceRefreshHangingBlock) {
+            game.forceRefreshHangingBlock = false;
+            prepareNextHangingBlock();
+            System.out.println("prepareNextHangingBlock dipanggil - activeWiderBlock: " + game.activeWiderBlock);
+        }
 
         int leftLimit = getTowerLeftLimit();
         int rightLimit = getTowerRightLimit(w);
@@ -348,7 +350,6 @@ public class NusantaraTower extends JPanel implements Runnable {
         if (!game.blockIsFalling) {
             int baseSpeed = game.hasSlowerCrane ? 2 : 4;
             game.craneX += (int) (baseSpeed * game.craneDirection * game.craneSpeedMultiplier);
-
 
             if (game.craneX >= rightLimit) {
                 game.craneX = rightLimit;
@@ -364,6 +365,7 @@ public class NusantaraTower extends JPanel implements Runnable {
             checkCollision();
         }
     }
+
 
 
     private void checkCollision() {
