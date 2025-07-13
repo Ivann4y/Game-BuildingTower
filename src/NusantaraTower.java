@@ -8,6 +8,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List; // Import List
 
 import audio.AudioPlayer;
 
@@ -18,7 +20,10 @@ public class NusantaraTower extends JPanel implements Runnable {
     private UpgradeMenu upgradeMenu;
     private Thread gameThread;
 
+    // MODIFIED: 'backgroundImage' is now dynamic
     private Image backgroundImage;
+    private List<Image> levelBackgrounds; // NEW: List to hold all background images
+
     private BufferedImage balokAbu, balokUngu, balokJendela, balokAtap;
     private long lastUpdateTime = System.nanoTime();
     private AudioPlayer backgroundMusic;
@@ -36,8 +41,17 @@ public class NusantaraTower extends JPanel implements Runnable {
 
         mainMenuBackground = new ImageIcon(getClass().getResource("/assets/mainMenu.gif")).getImage();
 
-        // Load background & block images
-        backgroundImage = new ImageIcon(getClass().getResource("/assets/ville.png")).getImage();
+        // MODIFIED: Load all backgrounds at startup
+        loadLevelBackgrounds();
+        // Set the initial background image from the list
+        if (!levelBackgrounds.isEmpty()) {
+            backgroundImage = levelBackgrounds.get(0);
+        } else {
+            // Fallback if no images were loaded
+            backgroundImage = new ImageIcon(getClass().getResource("/assets/ville.png")).getImage();
+        }
+
+        // Load block images
         try {
             balokAbu = ImageIO.read(getClass().getResource("/assets/balokAbu.png"));
             balokUngu = ImageIO.read(getClass().getResource("/assets/balokUngu.png"));
@@ -63,9 +77,34 @@ public class NusantaraTower extends JPanel implements Runnable {
         game.initFirstBlock();
         gameThread = new Thread(this);
         gameThread.start();
-//        backgroundMusic = new AudioPlayer();
-//        backgroundMusic.playSound("/assets/music/background.wav", true);
     }
+
+    // NEW: Method to load all background images into a list
+    private void loadLevelBackgrounds() {
+        levelBackgrounds = new ArrayList<>();
+        // List of all background files based on your project structure
+        String[] backgroundFiles = {
+                "1.png", "2.png", "3.png", "4.png", "5.png",
+                "6.png", "7.png", "8.png", "9.png", "10.png",
+                "11.jpeg", "12.jpeg", "13.jpeg", "14.jpeg", "15.jpeg",
+                "16.jpeg", "17.jpeg", "18.jpeg", "19.png", "20.jpeg", "21.jpeg"
+        };
+
+        for (String fileName : backgroundFiles) {
+            try {
+                java.net.URL imgURL = getClass().getResource("/assets/" + fileName);
+                if (imgURL != null) {
+                    levelBackgrounds.add(new ImageIcon(imgURL).getImage());
+                } else {
+                    System.err.println("Could not find background file: /assets/" + fileName);
+                }
+            } catch (Exception e) {
+                System.err.println("Error loading background image: " + fileName);
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     private int getTowerLeftLimit() {
         return 350;  // area city grid
@@ -82,12 +121,7 @@ public class NusantaraTower extends JPanel implements Runnable {
     @Override
     public void addNotify() {
         super.addNotify();
-//        game.initGame();
-
-        // Tunggu panel di-layout, lalu start tower
         SwingUtilities.invokeLater(() -> {
-//            startNewTower();
-
             game.initFirstBlock();
             gameThread = new Thread(this);
             gameThread.start();
@@ -99,7 +133,6 @@ public class NusantaraTower extends JPanel implements Runnable {
         int h = getHeight();
 
         if (w <= 0 || h <= 0) {
-            // Panel belum di-layout → tunda startNewTower sampai layout selesai
             SwingUtilities.invokeLater(this::startNewTower);
             return;
         }
@@ -108,7 +141,6 @@ public class NusantaraTower extends JPanel implements Runnable {
         game.craneDirection = 1;
         game.craneSpeedMultiplier = 1;
         game.blockIsFalling = false;
-//        game.gameState = GameState.PLAYING;
         game.blocksPlacedThisLevel = 0;
 
         resetTower(w, h);
@@ -119,8 +151,8 @@ public class NusantaraTower extends JPanel implements Runnable {
         game.towerStack.clear();
 
         int baseX = getTowerAreaCenter(w) - (game.baseBlockWidth / 2);
-        int baseY = h - 50; // Jarak dari bawah
-        if (baseY <= 0) baseY = 550; // fallback aman (jarang kepakai)
+        int baseY = h - 50;
+        if (baseY <= 0) baseY = 550;
 
         Block baseBlock = new Block(baseX, baseY, game.baseBlockWidth, 50, BlockType.PERUMAHAN, balokAbu);
         game.towerStack.push(baseBlock);
@@ -137,14 +169,13 @@ public class NusantaraTower extends JPanel implements Runnable {
 
         game.hangingBlock = new Block(
                 game.craneX - (lastWidth / 2),
-                100, // posisi awal atas
+                100,
                 lastWidth,
                 50,
                 nextType,
                 img
         );
     }
-
 
 
     private BufferedImage getImageForType(BlockType type) {
@@ -177,9 +208,9 @@ public class NusantaraTower extends JPanel implements Runnable {
                 game.showingUpgrades = !game.showingUpgrades;
 
                 if (game.showingUpgrades) {
-                    game.pauseAllEffects(); // Pause timer saat upgrade dibuka
+                    game.pauseAllEffects();
                 } else {
-                    game.resumeAllEffects(); // Resume saat ditutup
+                    game.resumeAllEffects();
                 }
             }else if (!game.showingUpgrades && k == KeyEvent.VK_SPACE && !game.blockIsFalling) {
                 game.blockIsFalling = true;
@@ -236,7 +267,6 @@ public class NusantaraTower extends JPanel implements Runnable {
             return;
         }
 
-        // Tambahkan balok atap tambahan di puncak (supaya tinggi tower pas)
         Block top = game.towerStack.peek();
         Block roof = new Block(top.x, top.y - top.height, top.width, top.height, top.type, balokAtap);
         game.towerStack.push(roof);
@@ -257,22 +287,18 @@ public class NusantaraTower extends JPanel implements Runnable {
 
     private void addFinalScore() {
         if (game.currentScore <= 0) {
-            game.isNewHighScore = false; // Pastikan flag-nya false
-            return; // Keluar dari method, tidak ada yang perlu ditambahkan
+            game.isNewHighScore = false;
+            return;
         }
 
-        // Kode di bawah ini hanya akan berjalan jika skor > 0
         GameScore newScore = new GameScore(game.currentScore);
         game.highScores.add(newScore);
 
-        // Urutkan dan potong
         game.highScores.sort((a, b) -> Long.compare(b.score, a.score));
         while (game.highScores.size() > 5) {
             game.highScores.removeLast();
         }
-// Cek apakah newScore masuk top 5
         game.isNewHighScore = game.highScores.contains(newScore);
-        // Tambahkan debug print
         System.out.println("High Scores:");
         for (GameScore gs : game.highScores) {
             System.out.println(" - " + gs.score);
@@ -307,7 +333,7 @@ public class NusantaraTower extends JPanel implements Runnable {
 
     private void updateGame() {
         int w = getWidth();
-        if (w <= 0) return; // panel belum siap
+        if (w <= 0) return;
 
         game.updateTemporaryEffects();
         if (game.forceRefreshHangingBlock) {
@@ -357,6 +383,13 @@ public class NusantaraTower extends JPanel implements Runnable {
                 if (game.blocksPlacedThisLevel >= game.getTargetForLevel(game.currentLevel)) {
                     game.currentLevel++;
                     game.gameState = GameState.TOWER_COMPLETE;
+
+                    // MODIFIED: Change background when level increases
+                    if (!levelBackgrounds.isEmpty()) {
+                        // Use modulo to loop through backgrounds if the level exceeds the number of images
+                        int newBackgroundIndex = (game.currentLevel - 1) % levelBackgrounds.size();
+                        backgroundImage = levelBackgrounds.get(newBackgroundIndex);
+                    }
                 } else {
                     prepareNextHangingBlock();
                 }
@@ -367,27 +400,24 @@ public class NusantaraTower extends JPanel implements Runnable {
     }
 
     private void drawEffectCountdownBars(Graphics2D g) {
-        int x = getWidth() - 220;  // posisi kanan atas
+        int x = getWidth() - 220;
         int y = 20;
 
         for (TemporaryEffect effect : game.activeTemporaryEffects) {
             float progress = effect.isPaused() ? 1.0f : effect.getProgress();
 
 
-            // background bar
             g.setColor(new Color(100, 100, 100, 180));
             g.fillRoundRect(x, y, 200, 20, 10, 10);
 
-            // progress bar
             g.setColor(new Color(255, 200, 0));
             g.fillRoundRect(x, y, (int) (200 * progress), 20, 10, 10);
 
-            // text label
             g.setColor(Color.BLACK);
             g.setFont(new Font("Arial", Font.PLAIN, 12));
             g.drawString(effect.name, x + 5, y + 15);
 
-            y += 30; // jarak antar efek
+            y += 30;
         }
     }
 
@@ -415,6 +445,7 @@ public class NusantaraTower extends JPanel implements Runnable {
             return;
         }
 
+        // The background image drawn here is now updated dynamically
         g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
 
         Graphics2D g2 = (Graphics2D) g;
@@ -503,25 +534,19 @@ public class NusantaraTower extends JPanel implements Runnable {
             case GAME_OVER -> {
                 title = "GAME OVER";
                 sub = "Tekan [ENTER] untuk Mulai Ulang";
-                // 1. Gambar "Skor Kamu" terlebih dahulu di posisi dasarnya.
                 String currentScoreText = "Skor Kamu: " + game.currentScore;
                 g.setColor(Color.WHITE);
                 g.setFont(new Font("Arial", Font.BOLD, 26));
                 int cw = g.getFontMetrics().stringWidth(currentScoreText);
                 g.drawString(currentScoreText, (getWidth() - cw) / 2, 240);
 
-                // 2. Jika ini adalah high score baru, gambar notifikasinya DI BAWAH skor.
                 if (game.isNewHighScore) {
                     g.setColor(Color.YELLOW);
                     g.setFont(new Font("Arial", Font.BOLD, 28));
-                    // Karakter '🎉' mungkin tidak tampil di semua sistem, lebih aman tanpa.
                     String notif = "New High Score!";
                     int nw = g.getFontMetrics().stringWidth(notif);
-                    // Beri jarak yang cukup, misalnya 275 (35 piksel di bawah skor).
                     g.drawString(notif, (getWidth() - nw) / 2, 275);
                 }
-
-                // --- AKHIR BAGIAN PERBAIKAN ---
             }
             case TOWER_COMPLETE -> {
                 title = "MENARA SELESAI!";
@@ -541,9 +566,7 @@ public class NusantaraTower extends JPanel implements Runnable {
                 g.setFont(new Font("Arial", Font.BOLD, 26));
                 int cw = g.getFontMetrics().stringWidth(currentScoreText);
                 g.drawString(currentScoreText, (getWidth() - cw) / 2, 240);
-
             }
-
         }
 
         int w = g.getFontMetrics().stringWidth(title);
@@ -565,6 +588,4 @@ public class NusantaraTower extends JPanel implements Runnable {
             if (rank > 5) break;
         }
     }
-
-
 }

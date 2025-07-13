@@ -40,5 +40,5 @@ public class HUD {
         legendY += 24;
         g.drawString("[ENTER]   Ulang", legendX, legendY);
 
-    }
+}
 }
