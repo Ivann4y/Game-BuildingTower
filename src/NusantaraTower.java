@@ -130,7 +130,8 @@ public class NusantaraTower extends JPanel implements Runnable {
     private void prepareNextHangingBlock() {
         game.blockIsFalling = false;
         BlockType nextType = game.getNextBlockType();
-        int lastWidth = game.towerStack.peek().width;
+
+        int lastWidth = game.activeWiderBlock ? game.baseBlockWidth : game.towerStack.peek().width;
         int target = game.getTargetForLevel(game.currentLevel);
         BufferedImage img = (game.blocksPlacedThisLevel == target - 1) ? balokAtap : getImageForType(nextType);
 
@@ -143,6 +144,7 @@ public class NusantaraTower extends JPanel implements Runnable {
                 img
         );
     }
+
 
 
     private BufferedImage getImageForType(BlockType type) {
@@ -175,15 +177,9 @@ public class NusantaraTower extends JPanel implements Runnable {
                 game.showingUpgrades = !game.showingUpgrades;
 
                 if (game.showingUpgrades) {
-                    game.upgradeMenuOpenedAt = System.nanoTime();
-                    game.pauseAllEffects(); // ← PAUSE SEMUA
+                    game.pauseAllEffects(); // Pause timer saat upgrade dibuka
                 } else {
-                    if (game.upgradeMenuOpenedAt != -1) {
-                        long now = System.nanoTime();
-                        game.totalUpgradePauseTime += now - game.upgradeMenuOpenedAt;
-                        game.upgradeMenuOpenedAt = -1;
-                    }
-                    game.resumeAllEffects(); // ← RESUME SEMUA
+                    game.resumeAllEffects(); // Resume saat ditutup
                 }
             }else if (!game.showingUpgrades && k == KeyEvent.VK_SPACE && !game.blockIsFalling) {
                 game.blockIsFalling = true;
@@ -223,6 +219,7 @@ public class NusantaraTower extends JPanel implements Runnable {
             if (game.currentScore >= up.cost) {
                 game.currentScore -= up.cost;
                 up.effect.run();
+                prepareNextHangingBlock();
             }
         }
     }
@@ -313,6 +310,11 @@ public class NusantaraTower extends JPanel implements Runnable {
         if (w <= 0) return; // panel belum siap
 
         game.updateTemporaryEffects();
+        if (game.forceRefreshHangingBlock) {
+            prepareNextHangingBlock();
+            game.forceRefreshHangingBlock = false;
+        }
+
 
         int leftLimit = getTowerLeftLimit();
         int rightLimit = getTowerRightLimit(w);
@@ -464,6 +466,11 @@ public class NusantaraTower extends JPanel implements Runnable {
         }
         g.setColor(Color.DARK_GRAY);
         g.drawRect(game.hangingBlock.x, game.hangingBlock.y, game.hangingBlock.width, game.hangingBlock.height);
+
+        if (game.activeWiderBlock) {
+            g.setColor(Color.ORANGE);
+            g.drawRect(game.hangingBlock.x, game.hangingBlock.y, game.hangingBlock.width, game.hangingBlock.height);
+        }
     }
 
     private void drawCity(Graphics2D g) {
