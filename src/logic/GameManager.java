@@ -1,12 +1,37 @@
 package logic;
 
 import data.*;
+
 import java.util.*;
 
+import data.Block;
+import data.BlockType;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+
+// ✅ Tambahkan import AudioPlayer
+import audio.AudioPlayer;
+
 public class GameManager {
-//    public Stack<Block> towerStack = new Stack<>();
+
+    // ✅ Tambahkan deklarasi untuk efek suara
+    private AudioPlayer successSound;
+    private AudioPlayer failSound;
+
+    public void initFirstBlock() {
+        try {
+            BufferedImage image = ImageIO.read(getClass().getResource("/assets/balokAbu.png"));
+            hangingBlock = new Block(100, 0, 50, 50, BlockType.PERUMAHAN, image);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public CircularBlockList towerStack = new CircularBlockList(5);
     public Queue<BlockType> upcomingBlocks = new LinkedList<>();
+    public List<TemporaryEffect> activeTemporaryEffects = new ArrayList<>();
     public List<GameScore> highScores = new LinkedList<>();
     public GameState gameState = GameState.PLAYING;
     public boolean isNewHighScore = false;
@@ -18,40 +43,153 @@ public class GameManager {
     public boolean showingUpgrades = false;
     public int craneX = 200;
     public int craneDirection = 1;
-    public int craneSpeedMultiplier = 1;
+    public double craneSpeedMultiplier = 1.0;
     public int baseBlockWidth = 100;
+    public long upgradeMenuOpenedAt = -1;
+    public long totalUpgradePauseTime = 0;
+    public boolean hasSlowerCrane = false;
+    public boolean activeWiderBlock = false;
+    public boolean forceRefreshHangingBlock = false;
+
 
     public Block hangingBlock;
     public UpgradeNode upgradeTreeRoot;
 
+    public int currentLevel = 1;
+
+    public int getTargetForLevel(int level) {
+        return 15 + (level - 1) * 5;
+    }
+
     public GameManager() {
         initGame();
+
+        // ✅ Inisialisasi suara
+        successSound = new AudioPlayer();
+        failSound = new AudioPlayer();
+        gameState = GameState.MAIN_MENU;
     }
 
     public void initGame() {
         buildUpgradeTree();
-        for(int i=0; i<3; i++) upcomingBlocks.offer(getRandomBlockType());
-        currentScore=0; playerLives=3; craneDirection=1; craneSpeedMultiplier=1; baseBlockWidth=100;
-        craneX = 400; // nilai default, kira-kira tengah
-        gameState=GameState.PLAYING; showingUpgrades=false;
+        for (int i = 0; i < 3; i++) upcomingBlocks.offer(getRandomBlockType());
+        currentScore = 0;
+        playerLives = 3;
+        craneDirection = 1;
+        craneSpeedMultiplier = 1;
+        baseBlockWidth = 100;
+        craneX = 400;
+        showingUpgrades = false;
     }
 
     public BlockType getNextBlockType() {
         BlockType nextType = upcomingBlocks.poll();
         upcomingBlocks.offer(getRandomBlockType());
+
+        int width = activeWiderBlock ? baseBlockWidth + 20 : baseBlockWidth;
+
+        try {
+            BufferedImage image = ImageIO.read(getClass().getResource("/assets/balokAbu.png"));
+            hangingBlock = new Block(craneX - width / 2, 0, width, 50, nextType, image);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         return nextType;
     }
+
 
     private BlockType getRandomBlockType() {
         return BlockType.values()[new Random().nextInt(BlockType.values().length)];
     }
 
+    public void updateTemporaryEffects() {
+        Iterator<TemporaryEffect> iter = activeTemporaryEffects.iterator();
+        while (iter.hasNext()) {
+            TemporaryEffect temp = iter.next();
+            if (temp.isExpired()) {
+                temp.expire();
+                iter.remove();
+
+                if (temp.name.equals("Balok Lebar")) {
+                    forceRefreshHangingBlock = true;
+                }
+            } else if (!temp.isPaused()) {
+                temp.applyUpdate();
+            }
+        }
+    }
+
+
+
     private void buildUpgradeTree() {
-        upgradeTreeRoot = new UpgradeNode("Root", "", 0, ()->{});
+        upgradeTreeRoot = new UpgradeNode("Root", "", 0, () -> {});
         upgradeTreeRoot.purchased = true;
-        UpgradeNode fastCrane = new UpgradeNode("Crane Cepat", "Kecepatan +50%", 500, () -> craneSpeedMultiplier=2);
-        UpgradeNode widerBlock = new UpgradeNode("Balok Lebih Lebar", "Lebar +20", 800, () -> baseBlockWidth=120);
-        upgradeTreeRoot.addChild(fastCrane); upgradeTreeRoot.addChild(widerBlock);
-        fastCrane.addChild(new UpgradeNode("Crane Super Cepat", "Kecepatan +100%", 2000, () -> craneSpeedMultiplier=3));
+
+        UpgradeNode slowCrane = new UpgradeNode("Crane Lambat", "Kecepatan -50% sementara", 500, () -> {
+            boolean startPaused = showingUpgrades; // ✅ Pindah ke dalam sini
+
+            TemporaryEffect slowEffect = new TemporaryEffect(
+                    "Crane Lambat",
+                    () -> craneSpeedMultiplier = 0.5,
+                    10000,
+                    () -> craneSpeedMultiplier = 1,
+                    null,
+                    startPaused
+            );
+
+            activeTemporaryEffects.add(slowEffect);
+        });
+
+        UpgradeNode widerBlock = new UpgradeNode("Balok Lebar", "Lebar +20 sementara", 800, () -> {
+            boolean startPaused = showingUpgrades;
+
+            TemporaryEffect wideEffect = new TemporaryEffect(
+                    "Balok Lebar",
+                    () -> {
+                        this.activeWiderBlock = true;
+                        this.baseBlockWidth += 40;  // sementara ditambah banyak biar efeknya kelihatan jelas
+                    },
+
+                    10000,
+                    () -> this.activeWiderBlock = false,
+                    null,
+                    startPaused
+            );
+
+            activeTemporaryEffects.add(wideEffect);
+        });
+
+
+
+
+
+        upgradeTreeRoot.addChild(slowCrane);
+        upgradeTreeRoot.addChild(widerBlock);
+    }
+
+
+    public void pauseAllEffects() {
+        for (TemporaryEffect effect : activeTemporaryEffects) {
+            effect.pause();
+        }
+    }
+
+    public void resumeAllEffects() {
+        for (TemporaryEffect effect : activeTemporaryEffects) {
+            effect.resume();
+        }
+    }
+
+
+
+    // ✅ Tambahkan method baru untuk dipanggil ketika balok berhasil ditumpuk
+    public void playSuccessSound() {
+        successSound.playSound("/assets/sfx/stack_success.wav", false);
+    }
+
+    // ✅ Tambahkan method baru untuk dipanggil ketika balok gagal ditumpuk
+    public void playFailSound() {
+        failSound.playSound("/assets/sfx/stack_fail.wav", false);
     }
 }
