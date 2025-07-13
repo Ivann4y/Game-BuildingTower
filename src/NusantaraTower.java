@@ -190,6 +190,7 @@ public class NusantaraTower extends JPanel implements Runnable {
     private void handleInput(KeyEvent e) {
         int k = e.getKeyCode();
 
+        // ================= MAIN MENU =================
         if (game.gameState == GameState.MAIN_MENU) {
             if (k == KeyEvent.VK_ENTER) {
                 game.gameState = GameState.PLAYING;
@@ -203,8 +204,30 @@ public class NusantaraTower extends JPanel implements Runnable {
             } else if (k == KeyEvent.VK_ESCAPE) {
                 System.exit(0);
             }
+
+            // ================= PAUSED =================
+        } else if (game.gameState == GameState.PAUSED) {
+            if (k == KeyEvent.VK_ENTER) {
+                game.isPausedManually = false;
+                game.gameState = GameState.PLAYING;
+                game.resumeAllEffects();
+            } else if (k == KeyEvent.VK_ESCAPE) {
+                game.initGame();
+                game.gameState = GameState.MAIN_MENU;
+            }
+
+            // ================= PLAYING =================
         } else if (game.gameState == GameState.PLAYING) {
-            if (k == KeyEvent.VK_U) {
+            if (k == KeyEvent.VK_P && !game.showingUpgrades) {
+                game.isPausedManually = !game.isPausedManually;
+                game.gameState = game.isPausedManually ? GameState.PAUSED : GameState.PLAYING;
+
+                if (game.isPausedManually) {
+                    game.pauseAllEffects();
+                } else {
+                    game.resumeAllEffects();
+                }
+            } else if (k == KeyEvent.VK_U) {
                 game.showingUpgrades = !game.showingUpgrades;
 
                 if (game.showingUpgrades) {
@@ -212,11 +235,13 @@ public class NusantaraTower extends JPanel implements Runnable {
                 } else {
                     game.resumeAllEffects();
                 }
-            }else if (!game.showingUpgrades && k == KeyEvent.VK_SPACE && !game.blockIsFalling) {
+            } else if (!game.showingUpgrades && k == KeyEvent.VK_SPACE && !game.blockIsFalling) {
                 game.blockIsFalling = true;
             } else if (game.showingUpgrades && k >= KeyEvent.VK_1 && k <= KeyEvent.VK_9) {
                 purchaseUpgrade(k - KeyEvent.VK_1);
             }
+
+            // ================= OTHER STATES =================
         } else if (k == KeyEvent.VK_ENTER) {
             switch (game.gameState) {
                 case GAME_OVER -> {
@@ -241,6 +266,7 @@ public class NusantaraTower extends JPanel implements Runnable {
             }
         }
     }
+
 
     private void purchaseUpgrade(int index) {
         java.util.List<UpgradeNode> list = new java.util.ArrayList<>();
@@ -412,7 +438,14 @@ public class NusantaraTower extends JPanel implements Runnable {
             g.setColor(new Color(100, 100, 100, 180));
             g.fillRoundRect(x, y, 200, 20, 10, 10);
 
-            g.setColor(new Color(255, 200, 0));
+            if (effect.name.equals("Balok Lebar")) {
+                g.setColor(new Color(255, 200, 0)); // Kuning
+            } else if (effect.name.equals("Crane Lambat")) {
+                g.setColor(new Color(100, 200, 255)); // Biru terang
+            } else {
+                g.setColor(Color.GRAY); // default
+            }
+
             g.fillRoundRect(x, y, (int) (200 * progress), 20, 10, 10);
 
             g.setColor(Color.BLACK);
@@ -422,6 +455,27 @@ public class NusantaraTower extends JPanel implements Runnable {
             y += 30;
         }
     }
+
+    private void drawPauseMenu(Graphics2D g) {
+        g.setColor(new Color(0, 0, 0, 180));
+        g.fillRect(0, 0, getWidth(), getHeight());
+
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 36));
+        String title = "PAUSE";
+        int w = g.getFontMetrics().stringWidth(title);
+        g.drawString(title, (getWidth() - w) / 2, 150);
+
+        g.setFont(new Font("Arial", Font.PLAIN, 24));
+        String resume = "[ENTER] Lanjut Main";
+        String back = "[ESC] Kembali ke Menu";
+
+        int rw = g.getFontMetrics().stringWidth(resume);
+        int bw = g.getFontMetrics().stringWidth(back);
+        g.drawString(resume, (getWidth() - rw) / 2, 250);
+        g.drawString(back, (getWidth() - bw) / 2, 300);
+    }
+
 
 
     @Override
@@ -468,6 +522,11 @@ public class NusantaraTower extends JPanel implements Runnable {
         } else if (game.gameState != GameState.PLAYING) {
             drawEndScreen(g2);
         }
+
+        if (game.gameState == GameState.PAUSED) {
+            drawPauseMenu((Graphics2D) g);
+        }
+
     }
 
     private void drawTower(Graphics2D g) {
@@ -504,6 +563,7 @@ public class NusantaraTower extends JPanel implements Runnable {
             g.setColor(Color.ORANGE);
             g.drawRect(game.hangingBlock.x, game.hangingBlock.y, game.hangingBlock.width, game.hangingBlock.height);
         }
+
     }
 
     private void drawCity(Graphics2D g) {
