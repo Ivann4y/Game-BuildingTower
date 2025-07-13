@@ -18,7 +18,7 @@ public class HUD {
 
         // === Bagian Skor dan Nyawa ===
 
-        g.setColor(Color.WHITE); // Ganti ke Color.WHITE kalau background kamu gelap
+        g.setColor(Color.WHITE  ); // Ganti ke Color.WHITE kalau background kamu gelap
         g.setFont(new Font("Algerian", Font.BOLD, 24));
         g.drawString("Skor: " + gm.currentScore, posX, 100);
         g.drawString("Nyawa:   ", posX, 130);
