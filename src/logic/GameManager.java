@@ -48,6 +48,9 @@ public class GameManager {
     public long upgradeMenuOpenedAt = -1;
     public long totalUpgradePauseTime = 0;
     public boolean hasSlowerCrane = false;
+    public boolean activeWiderBlock = false;
+    public boolean forceRefreshHangingBlock = false;
+
 
     public Block hangingBlock;
     public UpgradeNode upgradeTreeRoot;
@@ -82,8 +85,19 @@ public class GameManager {
     public BlockType getNextBlockType() {
         BlockType nextType = upcomingBlocks.poll();
         upcomingBlocks.offer(getRandomBlockType());
+
+        int width = activeWiderBlock ? baseBlockWidth + 20 : baseBlockWidth;
+
+        try {
+            BufferedImage image = ImageIO.read(getClass().getResource("/assets/balokAbu.png"));
+            hangingBlock = new Block(craneX - width / 2, 0, width, 50, nextType, image);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         return nextType;
     }
+
 
     private BlockType getRandomBlockType() {
         return BlockType.values()[new Random().nextInt(BlockType.values().length)];
@@ -96,6 +110,10 @@ public class GameManager {
             if (temp.isExpired()) {
                 temp.expire();
                 iter.remove();
+
+                if (temp.name.equals("Balok Lebar")) {
+                    forceRefreshHangingBlock = true;
+                }
             } else if (!temp.isPaused()) {
                 temp.applyUpdate();
             }
@@ -105,45 +123,64 @@ public class GameManager {
 
 
     private void buildUpgradeTree() {
-        upgradeTreeRoot = new UpgradeNode("Root", "", 0, () -> {
-        });
+        upgradeTreeRoot = new UpgradeNode("Root", "", 0, () -> {});
         upgradeTreeRoot.purchased = true;
 
         UpgradeNode slowCrane = new UpgradeNode("Crane Lambat", "Kecepatan -50% sementara", 500, () -> {
+            boolean startPaused = showingUpgrades; // ✅ Pindah ke dalam sini
+
             TemporaryEffect slowEffect = new TemporaryEffect(
                     "Crane Lambat",
-                    () -> {
-                        craneSpeedMultiplier = 0.5;
-                        hasSlowerCrane = true; // ✅ aktifkan flag
-                    },
+                    () -> craneSpeedMultiplier = 0.5,
                     10000,
-                    () -> {
-                        craneSpeedMultiplier = 1.0;
-                        hasSlowerCrane = false; // ✅ matikan flag saat efek berakhir
-                    },
-                    null
+                    () -> craneSpeedMultiplier = 1,
+                    null,
+                    startPaused
             );
+
             activeTemporaryEffects.add(slowEffect);
         });
 
+        UpgradeNode widerBlock = new UpgradeNode("Balok Lebar", "Lebar +20 sementara", 800, () -> {
+            boolean startPaused = showingUpgrades;
 
-        UpgradeNode widerBlock = new UpgradeNode("Balok Lebar", "Lebar +20", 800, () -> baseBlockWidth = 120);
+            TemporaryEffect wideEffect = new TemporaryEffect(
+                    "Balok Lebar",
+                    () -> {
+                        this.activeWiderBlock = true;
+                        this.baseBlockWidth += 40;  // sementara ditambah banyak biar efeknya kelihatan jelas
+                    },
+
+                    10000,
+                    () -> this.activeWiderBlock = false,
+                    null,
+                    startPaused
+            );
+
+            activeTemporaryEffects.add(wideEffect);
+        });
+
+
+
+
 
         upgradeTreeRoot.addChild(slowCrane);
         upgradeTreeRoot.addChild(widerBlock);
     }
 
+
     public void pauseAllEffects() {
-        for (TemporaryEffect e : activeTemporaryEffects) {
-            e.pause();
+        for (TemporaryEffect effect : activeTemporaryEffects) {
+            effect.pause();
         }
     }
 
     public void resumeAllEffects() {
-        for (TemporaryEffect e : activeTemporaryEffects) {
-            e.resume();
+        for (TemporaryEffect effect : activeTemporaryEffects) {
+            effect.resume();
         }
     }
+
 
 
     // ✅ Tambahkan method baru untuk dipanggil ketika balok berhasil ditumpuk
