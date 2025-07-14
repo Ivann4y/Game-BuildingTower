@@ -50,6 +50,8 @@ public class GameManager {
     public boolean hasSlowerCrane = false;
     public boolean activeWiderBlock = false;
     public boolean forceRefreshHangingBlock = false;
+    public boolean activeSlowCraneEffect = false;
+    public boolean isPausedManually = false;
 
 
     public Block hangingBlock;
@@ -82,7 +84,17 @@ public class GameManager {
         showingUpgrades = false;
     }
 
+    private BlockType getRandomBlockType() {
+        return BlockType.values()[new Random().nextInt(BlockType.values().length)];
+    }
+
+
     public BlockType getNextBlockType() {
+        // Cegah null: jika queue kosong, tambahkan dulu
+        if (upcomingBlocks.isEmpty()) {
+            upcomingBlocks.offer(getRandomBlockType());
+        }
+
         BlockType nextType = upcomingBlocks.poll();
         upcomingBlocks.offer(getRandomBlockType());
 
@@ -98,10 +110,6 @@ public class GameManager {
         return nextType;
     }
 
-
-    private BlockType getRandomBlockType() {
-        return BlockType.values()[new Random().nextInt(BlockType.values().length)];
-    }
 
     public void updateTemporaryEffects() {
         Iterator<TemporaryEffect> iter = activeTemporaryEffects.iterator();
@@ -131,12 +139,19 @@ public class GameManager {
 
             TemporaryEffect slowEffect = new TemporaryEffect(
                     "Crane Lambat",
-                    () -> craneSpeedMultiplier = 0.5,
+                    () -> {
+                        craneSpeedMultiplier = 0.5;
+                        activeSlowCraneEffect = true;
+                    },
                     10000,
-                    () -> craneSpeedMultiplier = 1,
+                    () -> {
+                        craneSpeedMultiplier = 1;
+                        activeSlowCraneEffect = false;
+                    },
                     null,
                     startPaused
             );
+
 
             activeTemporaryEffects.add(slowEffect);
         });
@@ -148,17 +163,20 @@ public class GameManager {
                     "Balok Lebar",
                     () -> {
                         this.activeWiderBlock = true;
-                        this.baseBlockWidth += 40;  // sementara ditambah banyak biar efeknya kelihatan jelas
+                        refreshHangingBlock(); // <<< Tambahan: langsung perbarui ukuran
                     },
-
                     10000,
-                    () -> this.activeWiderBlock = false,
+                    () -> {
+                        this.activeWiderBlock = false;
+                        refreshHangingBlock(); // <<< Tambahan: kembalikan ke normal saat efek habis
+                    },
                     null,
                     startPaused
             );
 
             activeTemporaryEffects.add(wideEffect);
         });
+
 
 
 
@@ -180,6 +198,15 @@ public class GameManager {
             effect.resume();
         }
     }
+
+    public void refreshHangingBlock() {
+        if (hangingBlock != null) {
+            int width = activeWiderBlock ? baseBlockWidth + 20 : baseBlockWidth;
+            hangingBlock.width = width;
+            hangingBlock.x = craneX - (width / 2);
+        }
+    }
+
 
 
 
