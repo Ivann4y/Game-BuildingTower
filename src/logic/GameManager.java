@@ -212,11 +212,11 @@ public class GameManager {
 
     // ✅ Tambahkan method baru untuk dipanggil ketika balok berhasil ditumpuk
     public void playSuccessSound() {
-        successSound.playSound("/assets/sfx/stack_success.wav", false);
+        successSound.playSound("/assets/sfx/stone-effect-254998.wav", false);
     }
 
     // ✅ Tambahkan method baru untuk dipanggil ketika balok gagal ditumpuk
     public void playFailSound() {
-        failSound.playSound("/assets/sfx/stack_fail.wav", false);
+        failSound.playSound("/assets/sfx/game-fx-9-40197.wav", false);
     }
 }

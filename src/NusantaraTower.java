@@ -198,7 +198,7 @@ public class NusantaraTower extends JPanel implements Runnable {
 
                 if (!"playing".equals(currentMusic)) {
                     backgroundMusic.stop();
-                    backgroundMusic.playSound("/assets/music/background.wav", true);
+                    backgroundMusic.playSound("/assets/music/gamer-music-140-bpm-355954.wav", true);
                     currentMusic = "playing";
                 }
             } else if (k == KeyEvent.VK_ESCAPE) {
