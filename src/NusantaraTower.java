@@ -9,7 +9,7 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List; // Import List
+import java.util.List;
 
 import audio.AudioPlayer;
 
@@ -20,7 +20,6 @@ public class NusantaraTower extends JPanel implements Runnable {
     private UpgradeMenu upgradeMenu;
     private Thread gameThread;
 
-    // MODIFIED: 'backgroundImage' is now dynamic
     private Image backgroundImage;
     private List<Image> levelBackgrounds; // NEW: List to hold all background images
 
@@ -107,11 +106,11 @@ public class NusantaraTower extends JPanel implements Runnable {
 
 
     private int getTowerLeftLimit() {
-        return 350;  // area city grid
+        return 350;
     }
 
     private int getTowerRightLimit(int w) {
-        return w - 300;  // area HUD
+        return w - 300;
     }
 
     private int getTowerAreaCenter(int w) {
