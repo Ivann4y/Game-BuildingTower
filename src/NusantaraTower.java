@@ -198,7 +198,7 @@ public class NusantaraTower extends JPanel implements Runnable {
 
                 if (!"playing".equals(currentMusic)) {
                     backgroundMusic.stop();
-                    backgroundMusic.playSound("/assets/music/background.wav", true);
+                    backgroundMusic.playSound("/assets/music/gamer-music-140-bpm-355954.wav", true);
                     currentMusic = "playing";
                 }
             } else if (k == KeyEvent.VK_ESCAPE) {
@@ -214,6 +214,11 @@ public class NusantaraTower extends JPanel implements Runnable {
             } else if (k == KeyEvent.VK_ESCAPE) {
                 game.initGame();
                 game.gameState = GameState.MAIN_MENU;
+                if (!"hadroh".equals(currentMusic)) {
+                    backgroundMusic.stop();
+                    backgroundMusic.playSound("/assets/music/hadroh.wav", true);
+                    currentMusic = "hadroh";
+                }
             }
 
             // ================= PLAYING =================
@@ -393,7 +398,6 @@ public class NusantaraTower extends JPanel implements Runnable {
     }
 
 
-
     private void checkCollision() {
         Block top = game.towerStack.peek();
         if (game.hangingBlock.y + game.hangingBlock.height >= top.y) {
@@ -475,7 +479,6 @@ public class NusantaraTower extends JPanel implements Runnable {
         g.drawString(resume, (getWidth() - rw) / 2, 250);
         g.drawString(back, (getWidth() - bw) / 2, 300);
     }
-
 
 
     @Override
