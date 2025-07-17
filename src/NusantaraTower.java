@@ -191,39 +191,28 @@ public class NusantaraTower extends JPanel implements Runnable {
 
         // ================= MAIN MENU =================
         if (game.gameState == GameState.MAIN_MENU) {
-            if (k == KeyEvent.VK_UP) {
-                // Pindahkan seleksi ke atas
-                game.mainMenuSelection--;
-                if (game.mainMenuSelection < 0) {
-                    game.mainMenuSelection = 1; // Kembali ke opsi terakhir (Keluar)
-                }
-            } else if (k == KeyEvent.VK_DOWN) {
-                // Pindahkan seleksi ke bawah
-                game.mainMenuSelection++;
-                if (game.mainMenuSelection > 1) {
-                    game.mainMenuSelection = 0; // Kembali ke opsi pertama (Mulai)
-                }
+            // Menggunakan logika toggle sederhana untuk dua item menu
+            if (k == KeyEvent.VK_UP || k == KeyEvent.VK_DOWN) {
+                game.mainMenuSelection = 1 - game.mainMenuSelection; // Beralih antara 0 dan 1
             } else if (k == KeyEvent.VK_ENTER) {
-                // Lakukan aksi berdasarkan seleksi
-                if (game.mainMenuSelection == 0) { // Jika "Mulai" yang dipilih
+                if (game.mainMenuSelection == 0) { // Opsi "Mulai"
                     game.gameState = GameState.ENTER_USERNAME;
-                    game.currentChar = 'A';
                     game.playerUsername = "";
-                } else if (game.mainMenuSelection == 1) { // Jika "Keluar" yang dipilih
+                } else if (game.mainMenuSelection == 1) { // Opsi "Keluar"
                     System.exit(0);
                 }
             } else if (k == KeyEvent.VK_ESCAPE) {
-                // Tombol ESC tetap berfungsi untuk keluar
                 System.exit(0);
             }
 
+            // ================= ENTER USERNAME =================
         } else if (game.gameState == GameState.ENTER_USERNAME) {
             char c = e.getKeyChar();
-
             if (k == KeyEvent.VK_ENTER) {
                 if (!game.playerUsername.isEmpty()) {
                     game.gameState = GameState.PLAYING;
                     startNewTower();
+                    // Ganti musik saat permainan dimulai
                     if (!"playing".equals(currentMusic)) {
                         backgroundMusic.stop();
                         backgroundMusic.playSound("/assets/music/gamer-music-140-bpm-355954.wav", true);
@@ -238,7 +227,7 @@ public class NusantaraTower extends JPanel implements Runnable {
                 game.playerUsername = game.playerUsername.substring(0, game.playerUsername.length() - 1);
             }
 
-        // ================= PAUSED =================
+            // ================= PAUSED =================
         } else if (game.gameState == GameState.PAUSED) {
             if (k == KeyEvent.VK_ENTER) {
                 game.isPausedManually = false;
@@ -247,6 +236,7 @@ public class NusantaraTower extends JPanel implements Runnable {
             } else if (k == KeyEvent.VK_ESCAPE) {
                 game.initGame();
                 game.gameState = GameState.MAIN_MENU;
+                // Kembalikan musik ke menu utama
                 if (!"hadroh".equals(currentMusic)) {
                     backgroundMusic.stop();
                     backgroundMusic.playSound("/assets/music/hadroh.wav", true);
@@ -259,39 +249,48 @@ public class NusantaraTower extends JPanel implements Runnable {
             if (k == KeyEvent.VK_P && !game.showingUpgrades) {
                 game.isPausedManually = !game.isPausedManually;
                 game.gameState = game.isPausedManually ? GameState.PAUSED : GameState.PLAYING;
-
-                if (game.isPausedManually) {
-                    game.pauseAllEffects();
-                } else {
-                    game.resumeAllEffects();
-                }
+                if (game.isPausedManually) game.pauseAllEffects();
+                else game.resumeAllEffects();
             } else if (k == KeyEvent.VK_U) {
                 game.showingUpgrades = !game.showingUpgrades;
-
-                if (game.showingUpgrades) {
-                    game.pauseAllEffects();
-                } else {
-                    game.resumeAllEffects();
-                }
+                if (game.showingUpgrades) game.pauseAllEffects();
+                else game.resumeAllEffects();
             } else if (!game.showingUpgrades && k == KeyEvent.VK_SPACE && !game.blockIsFalling) {
                 game.blockIsFalling = true;
             } else if (game.showingUpgrades && k >= KeyEvent.VK_1 && k <= KeyEvent.VK_9) {
                 purchaseUpgrade(k - KeyEvent.VK_1);
             }
 
-            // ================= OTHER STATES =================
+            // ================= OTHER STATES (Menunggu tombol ENTER) =================
+            // Semua state lain yang hanya menunggu input ENTER digabungkan di sini
         } else if (k == KeyEvent.VK_ENTER) {
             switch (game.gameState) {
-                case GAME_OVER -> {
+                case GAME_COMPLETE: {
+                    game.initGame(); // Reset semua progres
+                    game.gameState = GameState.MAIN_MENU;
+                    // Kembalikan musik ke menu utama
+                    if (!"hadroh".equals(currentMusic)) {
+                        backgroundMusic.stop();
+                        backgroundMusic.playSound("/assets/music/hadroh.wav", true);
+                        currentMusic = "hadroh";
+                    }
+                    break;
+                }
+                case GAME_OVER: {
                     game.initGame();
                     startNewTower();
                     game.gameState = GameState.PLAYING;
+                    break;
                 }
-                case TOWER_COMPLETE -> {
-                    placeTowerInCity();
-                    game.gameState = GameState.PLAYING;
+                case TOWER_COMPLETE: {
+                    placeTowerInCity(); // Method ini akan menentukan apakah game lanjut atau tamat
+                    // Hanya ubah state ke PLAYING jika game belum tamat
+                    if (game.gameState != GameState.GAME_COMPLETE) {
+                        game.gameState = GameState.PLAYING;
+                    }
+                    break;
                 }
-                case TOWER_FAILED -> {
+                case TOWER_FAILED: {
                     game.playerLives--;
                     if (game.playerLives <= 0) {
                         addFinalScore();
@@ -300,11 +299,11 @@ public class NusantaraTower extends JPanel implements Runnable {
                         startNewTower();
                         game.gameState = GameState.PLAYING;
                     }
+                    break;
                 }
             }
         }
     }
-
 
     private void purchaseUpgrade(int index) {
         java.util.List<UpgradeNode> list = new java.util.ArrayList<>();
@@ -325,28 +324,36 @@ public class NusantaraTower extends JPanel implements Runnable {
     }
 
     private void placeTowerInCity() {
-        if (city.nextCityPlot.y >= city.CITY_HEIGHT) {
-            addFinalScore();
-            game.gameState = GameState.GAME_OVER;
-            return;
-        }
-
+        // 1. Ambil menara yang sudah jadi dan siapkan untuk ditempatkan
         Block top = game.towerStack.peek();
-        Block roof = new Block(top.x, top.y - top.height, top.width, top.height, top.type, balokAtap);
-        game.towerStack.push(roof);
+        // (Opsional) Tambahkan atap secara visual jika perlu
+        // Block roof = new Block(top.x, top.y - top.height, top.width, top.height, top.type, balokAtap);
+        // game.towerStack.push(roof);
 
+        // 2. Buat objek FinishedBuilding dan tempatkan di grid
         FinishedBuilding fb = new FinishedBuilding(new Point(city.nextCityPlot), game.blocksPlacedThisLevel, top.type);
         city.cityGrid.put(new Point(city.nextCityPlot), fb);
 
+        // 3. Hitung dan tambahkan bonus skor
         game.currentScore += city.calculateSynergyBonus(city.nextCityPlot);
 
+        // 4. Perbarui lokasi untuk petak kota berikutnya
         city.nextCityPlot.x++;
         if (city.nextCityPlot.x >= city.CITY_WIDTH) {
             city.nextCityPlot.x = 0;
             city.nextCityPlot.y++;
         }
 
-        startNewTower();
+        // 5. INI BAGIAN PENTING: Cek kondisi tamat SEKARANG
+        if (city.nextCityPlot.y >= city.CITY_HEIGHT) {
+            // Jika kota sudah penuh, hitung skor akhir dan tamatkan permainan.
+            addFinalScore();
+            game.gameState = GameState.GAME_COMPLETE;
+            // JANGAN panggil startNewTower()
+        } else {
+            // Jika kota BELUM penuh, barulah mulai menara berikutnya.
+            startNewTower();
+        }
     }
 
     private void addFinalScore() {
@@ -465,7 +472,7 @@ public class NusantaraTower extends JPanel implements Runnable {
         if (game.hangingBlock.y + game.hangingBlock.height >= top.y) {
             int overlap = Math.min(game.hangingBlock.x + game.hangingBlock.width, top.x + top.width)
                     - Math.max(game.hangingBlock.x, top.x);
-            if (overlap > 20) {
+            if (overlap > 19) {
                 game.hangingBlock.y = top.y - game.hangingBlock.height;
 
                 game.towerStack.push(game.hangingBlock);
@@ -474,17 +481,34 @@ public class NusantaraTower extends JPanel implements Runnable {
                 int bonus = Math.max(0, 100 - centerDiff * 2);
                 game.currentScore += 10 + bonus;
 
-                if (game.blocksPlacedThisLevel >= game.getTargetForLevel(game.currentLevel)) {
-                    game.currentLevel++;
-                    game.gameState = GameState.TOWER_COMPLETE;
+                // Tentukan jumlah total petak yang ada di kota
+                int totalCityPlots = city.CITY_WIDTH * city.CITY_HEIGHT;
+// Hitung jumlah menara yang sudah berhasil dibangun
+                int towersAlreadyBuilt = city.cityGrid.size();
 
-                    // MODIFIED: Change background when level increases
-                    if (!levelBackgrounds.isEmpty()) {
-                        // Use modulo to loop through backgrounds if the level exceeds the number of images
-                        int newBackgroundIndex = (game.currentLevel - 1) % levelBackgrounds.size();
-                        backgroundImage = levelBackgrounds.get(newBackgroundIndex);
+                if (game.blocksPlacedThisLevel >= game.getTargetForLevel(game.currentLevel)) {
+                    // ---- LOGIKA BARU DIMULAI DI SINI ----
+                    // Cek apakah ini adalah menara TERAKHIR yang akan menyelesaikan permainan
+                    if (towersAlreadyBuilt + 1 >= totalCityPlots) {
+                        // Jika ya, langsung tempatkan menara dan tamatkan permainan.
+                        // Ini akan melewati layar "MENARA SELESAI" yang tidak perlu.
+                        placeTowerInCity();
+                        // placeTowerInCity() akan secara otomatis mengatur state ke GAME_COMPLETE
+                    } else {
+                        // Jika bukan menara terakhir, lanjutkan seperti biasa.
+                        game.currentLevel++;
+                        game.gameState = GameState.TOWER_COMPLETE;
+
+                        // Ganti latar belakang seperti biasa
+                        if (!levelBackgrounds.isEmpty()) {
+                            int newBackgroundIndex = (game.currentLevel - 1) % levelBackgrounds.size();
+                            backgroundImage = levelBackgrounds.get(newBackgroundIndex);
+                        }
                     }
+                    // ---- LOGIKA BARU SELESAI ----
+
                 } else {
+                    // Jika level saat ini belum selesai, siapkan balok berikutnya
                     prepareNextHangingBlock();
                 }
             } else {
@@ -721,6 +745,52 @@ public class NusantaraTower extends JPanel implements Runnable {
 
         String title = "", sub = "";
         switch (game.gameState) {
+            case GAME_COMPLETE -> {
+                // Menggambar Teks "TAMAT" yang besar
+                g.setFont(new Font("Serif", Font.BOLD, 96));
+                g.setColor(Color.CYAN); // Warna biru terang agar terlihat futuristik
+                title = "TAMAT";
+                FontMetrics fmTitle = g.getFontMetrics();
+                int titleWidth = fmTitle.stringWidth(title);
+                g.drawString(title, (getWidth() - titleWidth) / 2, getHeight() / 2 - 50);
+
+                // Menggambar Skor Akhir
+                g.setFont(new Font("Arial", Font.BOLD, 28));
+                g.setColor(Color.WHITE);
+                String scoreText = "Skor Akhir: " + game.currentScore;
+                FontMetrics fmScore = g.getFontMetrics();
+                int scoreWidth = fmScore.stringWidth(scoreText);
+                g.drawString(scoreText, (getWidth() - scoreWidth) / 2, getHeight() / 2 + 30);
+
+                // Menggambar Tombol "Kembali ke Menu"
+                g.setFont(new Font("Arial", Font.BOLD, 24));
+                String buttonText = "Tekan [ENTER] untuk Kembali ke Menu";
+                FontMetrics fmButton = g.getFontMetrics();
+                int buttonWidth = fmButton.stringWidth(buttonText);
+                int buttonHeight = 40;
+                int buttonPadding = 20;
+
+                int rectWidth = buttonWidth + (buttonPadding * 2);
+                int rectHeight = buttonHeight + (buttonPadding);
+                int rectX = (getWidth() - rectWidth) / 2;
+                int rectY = getHeight() - rectHeight - 60;
+
+                // Gambar kotak tombol
+                g.setColor(new Color(255, 190, 0)); // Warna emas
+                g.fillRoundRect(rectX, rectY, rectWidth, rectHeight, 30, 30);
+
+                // Gambar border tombol
+                g.setColor(Color.WHITE);
+                g.setStroke(new BasicStroke(3));
+                g.drawRoundRect(rectX, rectY, rectWidth, rectHeight, 30, 30);
+
+                // Tulis teks di atas tombol
+                g.setColor(Color.BLACK);
+                g.drawString(buttonText, rectX + buttonPadding, rectY + buttonHeight);
+
+                // High score tetap ditampilkan di GAME_OVER
+                return; // Selesai untuk state ini
+            }
             case GAME_OVER -> {
                 title = "GAME OVER";
                 sub = "Tekan [ENTER] untuk Mulai Ulang";

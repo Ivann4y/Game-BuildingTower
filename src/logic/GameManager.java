@@ -65,7 +65,7 @@ public class GameManager {
     public int currentLevel = 1;
 
     public int getTargetForLevel(int level) {
-        return 15 + (level - 1) * 1;
+        return 1 + (level - 1) * 1;
     }
 
     public GameManager() {
