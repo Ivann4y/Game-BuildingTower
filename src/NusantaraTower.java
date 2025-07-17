@@ -513,7 +513,7 @@ public class NusantaraTower extends JPanel implements Runnable {
         drawCity(g2);
         drawTower(g2);
         if (game.gameState != GameState.GAME_OVER) drawCraneAndBlock(g2);
-        hud.draw(g2, getWidth());
+        hud.draw(g2, getWidth(), getHeight());
 
         if (!game.activeTemporaryEffects.isEmpty()) {
             drawEffectCountdownBars(g2);
