@@ -31,7 +31,7 @@ public class HUD {
         int marginX = 30;
         int marginY = 30;
         int boxWidth = 280;
-        int boxHeight = 80;
+        int boxHeight = 50;
 
 
         int legendX = panelWidth - boxWidth - marginX; // pojok kanan
@@ -47,9 +47,7 @@ public class HUD {
         g.drawString("[SPACE]   Jatuhkan Balok", legendX, textY);
         textY += 24;
         g.drawString("[U]           Tampilkan Upgrade", legendX, textY);
-        textY += 24;
-        g.drawString("[ENTER]   Ulang", legendX, textY);
-        textY += 24;
+        textY += 24;;
         g.drawString("[P]            Pause", legendX, textY);
     }
 }
