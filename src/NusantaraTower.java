@@ -28,6 +28,7 @@ public class NusantaraTower extends JPanel implements Runnable {
     private AudioPlayer backgroundMusic;
     private Image mainMenuBackground;
     private String currentMusic = "";
+    private volatile boolean running = true;
 
 
     public NusantaraTower() {
@@ -74,8 +75,6 @@ public class NusantaraTower extends JPanel implements Runnable {
         requestFocusInWindow();
 
         game.initFirstBlock();
-        gameThread = new Thread(this);
-        gameThread.start();
     }
 
     // NEW: Method to load all background images into a list
@@ -191,11 +190,29 @@ public class NusantaraTower extends JPanel implements Runnable {
 
         // ================= MAIN MENU =================
         if (game.gameState == GameState.MAIN_MENU) {
-            if (k == KeyEvent.VK_ENTER) {
-                game.gameState = GameState.ENTER_USERNAME;
-                game.currentChar = 'A';
-                game.playerUsername = "";
+            if (k == KeyEvent.VK_UP) {
+                // Pindahkan seleksi ke atas
+                game.mainMenuSelection--;
+                if (game.mainMenuSelection < 0) {
+                    game.mainMenuSelection = 1; // Kembali ke opsi terakhir (Keluar)
+                }
+            } else if (k == KeyEvent.VK_DOWN) {
+                // Pindahkan seleksi ke bawah
+                game.mainMenuSelection++;
+                if (game.mainMenuSelection > 1) {
+                    game.mainMenuSelection = 0; // Kembali ke opsi pertama (Mulai)
+                }
+            } else if (k == KeyEvent.VK_ENTER) {
+                // Lakukan aksi berdasarkan seleksi
+                if (game.mainMenuSelection == 0) { // Jika "Mulai" yang dipilih
+                    game.gameState = GameState.ENTER_USERNAME;
+                    game.currentChar = 'A';
+                    game.playerUsername = "";
+                } else if (game.mainMenuSelection == 1) { // Jika "Keluar" yang dipilih
+                    System.exit(0);
+                }
             } else if (k == KeyEvent.VK_ESCAPE) {
+                // Tombol ESC tetap berfungsi untuk keluar
                 System.exit(0);
             }
 
@@ -351,8 +368,6 @@ public class NusantaraTower extends JPanel implements Runnable {
         }
     }
 
-    private volatile boolean running = true;
-
     public void stopGame() {
         running = false;
         if (gameThread != null) {
@@ -362,17 +377,48 @@ public class NusantaraTower extends JPanel implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
-            if (getWidth() > 0 && getHeight() > 0) {
+        long lastTime = System.nanoTime();
+        final double amountOfTicks = 60.0; // Menargetkan 60 update logika per detik
+        final double ns = 1000000000 / amountOfTicks;
+        double delta = 0;
+        long timer = System.currentTimeMillis();
+        int updates = 0;
+        int frames = 0;
+
+        while (running) {
+            long now = System.nanoTime();
+            delta += (now - lastTime) / ns;
+            lastTime = now;
+
+            // Loop ini memastikan update logika game selalu berjalan pada kecepatan tetap
+            while (delta >= 1) {
+                // Hanya update jika game sedang berjalan
                 if (game.gameState == GameState.PLAYING && !game.showingUpgrades) {
                     updateGame();
                 }
-                repaint();
+                updates++; // (Untuk debug)
+                delta--;
             }
+
+            // Render (menggambar ke layar) bisa berjalan secepat mungkin
+            repaint();
+            frames++; // (Untuk debug)
+
+            // Kode di bawah ini hanya untuk menampilkan status FPS dan UPS, bisa dihapus jika tidak perlu
+            if (System.currentTimeMillis() - timer > 1000) {
+                timer += 1000;
+                System.out.println("UPS: " + updates + ", FPS: " + frames);
+                updates = 0;
+                frames = 0;
+            }
+
+            // Beri jeda sangat singkat agar CPU tidak bekerja 100%
             try {
-                Thread.sleep(16);
-            } catch (Exception e) {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
                 e.printStackTrace();
+                Thread.currentThread().interrupt();
+                running = false;
             }
         }
     }
@@ -499,23 +545,62 @@ public class NusantaraTower extends JPanel implements Runnable {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         if (game.gameState == GameState.MAIN_MENU) {
             g.drawImage(mainMenuBackground, 0, 0, getWidth(), getHeight(), this);
+
+            // Gambar Judul
             g.setColor(Color.WHITE);
-            g.setFont(new Font("Arial", Font.BOLD, 48));
-            String title = "NUSANTARA TOWER";
-            int w = g.getFontMetrics().stringWidth(title);
-            g.drawString(title, (getWidth() - w) / 2, 200);
+            g.setFont(new Font("Serif", Font.BOLD, 80));
+            String title = "BUILDING TOWER";
+            int titleWidth = g.getFontMetrics().stringWidth(title);
+            g.drawString(title, (getWidth() - titleWidth) / 2, 150);
 
-            g.setFont(new Font("Arial", Font.BOLD, 32));
-            String startText = "Tekan [ENTER] untuk Mulai";
-            w = g.getFontMetrics().stringWidth(startText);
-            g.drawString(startText, (getWidth() - w) / 2, 300);
+            // UBAH BARIS INI: Cukup sediakan dua opsi
+            String[] menuOptions = {"MULAI", "KELUAR"};
 
-            String exitText = "Tekan [ESC] untuk Keluar";
-            w = g.getFontMetrics().stringWidth(exitText);
-            g.drawString(exitText, (getWidth() - w) / 2, 350);
+            // Atur Font
+            Font menuFont = new Font("Serif", Font.BOLD, 36);
+            g.setFont(menuFont);
+            FontMetrics fm = g.getFontMetrics();
+
+
+            int startY = 400; // Sedikit diturunkan agar lebih di tengah
+            int menuSpacing = 60;
+
+            // Kode di bawah ini tidak perlu diubah, karena akan otomatis
+            // menyesuaikan dengan jumlah item di menuOptions.
+            for (int i = 0; i < menuOptions.length; i++) {
+                String text = menuOptions[i];
+                int textWidth = fm.stringWidth(text);
+                int x = (getWidth() - textWidth) / 2;
+                int y = startY + i * menuSpacing;
+
+                if (i == game.mainMenuSelection) {
+                    // Item yang Dipilih
+                    g.setColor(Color.YELLOW);
+                    g.drawString(text, x, y);
+
+                    // Gambar garis
+                    int linePadding = 10;
+                    int lineWidth = textWidth + (linePadding * 2);
+                    int lineX = x - linePadding;
+                    g2d.setStroke(new BasicStroke(2));
+                    g2d.drawLine(lineX, y - fm.getAscent() + 5, lineX + lineWidth, y - fm.getAscent() + 5);
+                    g2d.drawLine(lineX, y + fm.getDescent() + 2, lineX + lineWidth, y + fm.getDescent() + 2);
+
+                    // Gambar ikon
+                    drawSelectionIcon(g2d, x + textWidth + 15, y - (fm.getHeight() / 2) + fm.getDescent() + 5);
+
+                } else {
+                    // Item yang Tidak Dipilih
+                    g.setColor(Color.WHITE);
+                    g.drawString(text, x, y);
+                }
+            }
+
             return;
         }
 
@@ -528,7 +613,7 @@ public class NusantaraTower extends JPanel implements Runnable {
         drawCity(g2);
         drawTower(g2);
         if (game.gameState != GameState.GAME_OVER) drawCraneAndBlock(g2);
-        hud.draw(g2, getWidth());
+        hud.draw(g2, getWidth(), getHeight());
 
         if (!game.activeTemporaryEffects.isEmpty()) {
             drawEffectCountdownBars(g2);
@@ -566,6 +651,9 @@ public class NusantaraTower extends JPanel implements Runnable {
 
             return;
         }
+    }
+
+    private void drawSelectionIcon(Graphics2D g2d, int i, int i1) {
     }
 
     private void drawTower(Graphics2D g) {
