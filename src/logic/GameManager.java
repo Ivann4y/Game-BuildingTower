@@ -80,6 +80,7 @@ public class GameManager {
         for (int i = 0; i < 3; i++) upcomingBlocks.offer(getRandomBlockType());
         currentScore = 0;
         playerLives = 3;
+        currentLevel = 1;
         craneDirection = 1;
         craneSpeedMultiplier = 1;
         baseBlockWidth = 100;

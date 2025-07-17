@@ -168,28 +168,33 @@ public class NusantaraTower extends JPanel implements Runnable {
     private void handleInput(KeyEvent e) {
         int k = e.getKeyCode();
 
-        // MAIN MENU
+        // ================= MAIN MENU =================
         if (game.gameState == GameState.MAIN_MENU) {
             if (k == KeyEvent.VK_UP || k == KeyEvent.VK_DOWN) {
-                game.mainMenuSelection = 1 - game.mainMenuSelection;
+                game.mainMenuSelection = 1 - game.mainMenuSelection; // Beralih antara 0 dan 1
             } else if (k == KeyEvent.VK_ENTER) {
-                if (game.mainMenuSelection == 0) { // Mulai
+                if (game.mainMenuSelection == 0) { // Opsi "Mulai"
                     game.gameState = GameState.ENTER_USERNAME;
                     game.playerUsername = "";
-                } else if (game.mainMenuSelection == 1) { // Keluar
+                } else if (game.mainMenuSelection == 1) { // Opsi "Keluar"
                     System.exit(0);
                 }
             } else if (k == KeyEvent.VK_ESCAPE) {
                 System.exit(0);
             }
 
-            // ENTER USERNAME
+            // ================= ENTER USERNAME (Memulai Sesi Baru) =================
         } else if (game.gameState == GameState.ENTER_USERNAME) {
             char c = e.getKeyChar();
             if (k == KeyEvent.VK_ENTER) {
                 if (!game.playerUsername.isEmpty()) {
+                    // Ini adalah titik awal resmi permainan baru
+                    city.resetCity(); // PERBAIKAN: Reset kota sebelum memulai
+                    game.initGame();  // Reset skor dan progres game
+                    startNewTower();  // Mulai menara pertama
                     game.gameState = GameState.PLAYING;
-                    startNewTower();
+
+                    // Ganti musik
                     if (!"playing".equals(currentMusic)) {
                         backgroundMusic.stop();
                         backgroundMusic.playSound("/assets/music/gamer-music-140-bpm-355954.wav", true);
@@ -204,13 +209,15 @@ public class NusantaraTower extends JPanel implements Runnable {
                 game.playerUsername = game.playerUsername.substring(0, game.playerUsername.length() - 1);
             }
 
-            // PAUSED
+            // ================= PAUSED =================
         } else if (game.gameState == GameState.PAUSED) {
             if (k == KeyEvent.VK_ENTER) {
                 game.isPausedManually = false;
                 game.gameState = GameState.PLAYING;
                 game.resumeAllEffects();
             } else if (k == KeyEvent.VK_ESCAPE) {
+                // Kembali ke menu berarti membatalkan permainan saat ini
+                city.resetCity(); // PERBAIKAN: Reset kota saat kembali ke menu
                 game.initGame();
                 game.gameState = GameState.MAIN_MENU;
                 if (!"hadroh".equals(currentMusic)) {
@@ -220,7 +227,7 @@ public class NusantaraTower extends JPanel implements Runnable {
                 }
             }
 
-            // PLAYING
+            // ================= PLAYING =================
         } else if (game.gameState == GameState.PLAYING) {
             if (k == KeyEvent.VK_P && !game.showingUpgrades) {
                 game.isPausedManually = !game.isPausedManually;
@@ -237,10 +244,12 @@ public class NusantaraTower extends JPanel implements Runnable {
                 purchaseUpgrade(k - KeyEvent.VK_1);
             }
 
-            // OTHER STATES (Menunggu tombol ENTER)
+            // ================= OTHER STATES (Menunggu tombol ENTER) =================
         } else if (k == KeyEvent.VK_ENTER) {
             switch (game.gameState) {
                 case GAME_COMPLETE: {
+                    // Kembali ke menu setelah tamat
+                    city.resetCity(); // PERBAIKAN: Reset kota
                     game.initGame();
                     game.gameState = GameState.MAIN_MENU;
                     if (!"hadroh".equals(currentMusic)) {
@@ -251,6 +260,8 @@ public class NusantaraTower extends JPanel implements Runnable {
                     break;
                 }
                 case GAME_OVER: {
+                    // Memulai ulang setelah game over
+                    city.resetCity(); // PERBAIKAN: Reset kota
                     game.initGame();
                     startNewTower();
                     game.gameState = GameState.PLAYING;
@@ -269,7 +280,7 @@ public class NusantaraTower extends JPanel implements Runnable {
                         addFinalScore();
                         game.gameState = GameState.GAME_OVER;
                     } else {
-                        startNewTower();
+                        startNewTower(); // Tidak perlu reset kota, karena masih sesi yang sama
                         game.gameState = GameState.PLAYING;
                     }
                     break;

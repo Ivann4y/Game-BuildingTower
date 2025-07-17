@@ -39,4 +39,9 @@ public class CityManager {
         }
         return bonus;
     }
+
+    public void resetCity() {
+        cityGrid.clear();
+        nextCityPlot = new Point(0, 0);
+    }
 }
