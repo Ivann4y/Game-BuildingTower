@@ -192,19 +192,35 @@ public class NusantaraTower extends JPanel implements Runnable {
         // ================= MAIN MENU =================
         if (game.gameState == GameState.MAIN_MENU) {
             if (k == KeyEvent.VK_ENTER) {
-                game.gameState = GameState.PLAYING;
-                startNewTower();
-
-                if (!"playing".equals(currentMusic)) {
-                    backgroundMusic.stop();
-                    backgroundMusic.playSound("/assets/music/gamer-music-140-bpm-355954.wav", true);
-                    currentMusic = "playing";
-                }
+                game.gameState = GameState.ENTER_USERNAME;
+                game.currentChar = 'A';
+                game.playerUsername = "";
             } else if (k == KeyEvent.VK_ESCAPE) {
                 System.exit(0);
             }
 
-            // ================= PAUSED =================
+        } else if (game.gameState == GameState.ENTER_USERNAME) {
+            char c = e.getKeyChar();
+
+            if (k == KeyEvent.VK_ENTER) {
+                if (!game.playerUsername.isEmpty()) {
+                    game.gameState = GameState.PLAYING;
+                    startNewTower();
+                    if (!"playing".equals(currentMusic)) {
+                        backgroundMusic.stop();
+                        backgroundMusic.playSound("/assets/music/gamer-music-140-bpm-355954.wav", true);
+                        currentMusic = "playing";
+                    }
+                }
+            } else if (k == KeyEvent.VK_ESCAPE) {
+                game.gameState = GameState.MAIN_MENU;
+            } else if ((Character.isLetterOrDigit(c) || c == ' ') && game.playerUsername.length() < 12) {
+                game.playerUsername += c;
+            } else if (k == KeyEvent.VK_BACK_SPACE && !game.playerUsername.isEmpty()) {
+                game.playerUsername = game.playerUsername.substring(0, game.playerUsername.length() - 1);
+            }
+
+        // ================= PAUSED =================
         } else if (game.gameState == GameState.PAUSED) {
             if (k == KeyEvent.VK_ENTER) {
                 game.isPausedManually = false;
@@ -529,6 +545,27 @@ public class NusantaraTower extends JPanel implements Runnable {
             drawPauseMenu((Graphics2D) g);
         }
 
+        if (game.gameState == GameState.ENTER_USERNAME) {
+            g.drawImage(mainMenuBackground, 0, 0, getWidth(), getHeight(), this);
+
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Arial", Font.BOLD, 32));
+            String prompt = "Masukkan Nama Pemain";
+            int pw = g.getFontMetrics().stringWidth(prompt);
+            g.drawString(prompt, (getWidth() - pw) / 2, 200);
+
+            g.setFont(new Font("Monospaced", Font.BOLD, 48));
+            String usernameDisplay = game.playerUsername + "_";
+            int uw = g.getFontMetrics().stringWidth(usernameDisplay);
+            g.drawString(usernameDisplay, (getWidth() - uw) / 2, 270);
+
+            g.setFont(new Font("Arial", Font.PLAIN, 24));
+            String info = "[ENTER] konfirmasi   [ESC] batal   [Bckspc] hapus";
+            int iw = g.getFontMetrics().stringWidth(info);
+            g.drawString(info, (getWidth() - iw) / 2, 340);
+
+            return;
+        }
     }
 
     private void drawTower(Graphics2D g) {

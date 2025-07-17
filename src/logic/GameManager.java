@@ -35,6 +35,10 @@ public class GameManager {
     public List<GameScore> highScores = new LinkedList<>();
     public GameState gameState = GameState.PLAYING;
     public boolean isNewHighScore = false;
+    public String playerUsername = "";
+    public int usernameCharIndex = 0; // buat scroll huruf
+    public char currentChar = 'A';
+
 
     public int blocksPlacedThisLevel = 0;
     public long currentScore = 0;
