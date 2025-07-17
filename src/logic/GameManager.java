@@ -11,12 +11,10 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
-// ✅ Tambahkan import AudioPlayer
 import audio.AudioPlayer;
 
 public class GameManager {
 
-    // ✅ Tambahkan deklarasi untuk efek suara
     private AudioPlayer successSound;
     private AudioPlayer failSound;
 
