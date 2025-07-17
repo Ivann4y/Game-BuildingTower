@@ -35,6 +35,10 @@ public class GameManager {
     public List<GameScore> highScores = new LinkedList<>();
     public GameState gameState = GameState.PLAYING;
     public boolean isNewHighScore = false;
+    public String playerUsername = "";
+    public int usernameCharIndex = 0; // buat scroll huruf
+    public char currentChar = 'A';
+
 
     public int blocksPlacedThisLevel = 0;
     public long currentScore = 0;
@@ -60,7 +64,7 @@ public class GameManager {
     public int currentLevel = 1;
 
     public int getTargetForLevel(int level) {
-        return 15 + (level - 1) * 5;
+        return 15 + (level - 1) * 1;
     }
 
     public GameManager() {
