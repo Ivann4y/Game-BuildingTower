@@ -19,12 +19,12 @@ public class HUD {
         // === Bagian Skor dan Nyawa ===
         g.setColor(Color.WHITE);
         g.setFont(new Font("Algerian", Font.BOLD, 24));
-        g.drawString("Skor: " + gm.currentScore, posX, 100);
-        g.drawString("Nyawa: ", posX, 130);
+        g.drawString("Skor: " + gm.currentScore, posX, 30);
+        g.drawString("Nyawa: ", posX, 60);
 
         g.setColor(Color.RED);
         for (int i = 0; i < gm.playerLives; i++) {
-            g.fillOval(posX + 90 + (i * 30), 112, 20, 20);
+            g.fillOval(posX + 90 + (i * 30), 42, 20, 20);
         }
 
         // === Bagian Legend (Kontrol) ===

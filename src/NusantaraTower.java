@@ -609,20 +609,39 @@ public class NusantaraTower extends JPanel implements Runnable {
     }
 
     private void drawCity(Graphics2D g) {
+        // --- ATUR POSISI GRID DI SINI ---
+        int gridOffsetX = 20; // Posisi dari kiri
+        int gridOffsetY = 100; // Posisi dari atas (NAIKKAN ANGKA INI UNTUK MENURUNKAN GRID)
+
+        // Ukuran grid
+        int gridWidth = 260;
+        int gridHeight = 210;
+
+        // Gambar latar belakang grid
         g.setColor(new Color(100, 150, 100));
-        g.fillRect(20, 20, 260, 210);
+        g.fillRect(gridOffsetX, gridOffsetY, gridWidth, gridHeight);
+
+        // Loop untuk menggambar setiap petak
         for (int y = 0; y < city.CITY_HEIGHT; y++) {
             for (int x = 0; x < city.CITY_WIDTH; x++) {
                 Point p = new Point(x, y);
                 FinishedBuilding b = city.cityGrid.get(p);
+
+                // Hitung posisi X dan Y untuk setiap kotak dengan offset
+                int boxX = gridOffsetX + 5 + (x * 50);
+                int boxY = gridOffsetY + 5 + (y * 50);
+
                 if (b != null) {
+                    // Gambar bangunan yang sudah ada
                     g.setColor(b.type.color);
-                    g.fillRect(25 + x * 50, 25 + y * 50, 40, 40);
+                    g.fillRect(boxX, boxY, 40, 40);
                     g.setColor(Color.WHITE);
-                    g.drawString("" + b.height, 35 + x * 50, 45 + y * 50);
+                    // Posisi teks juga disesuaikan dengan offset
+                    g.drawString("" + b.height, boxX + 10, boxY + 20);
                 } else {
+                    // Gambar petak kosong
                     g.setColor(new Color(80, 130, 80));
-                    g.drawRect(25 + x * 50, 25 + y * 50, 40, 40);
+                    g.drawRect(boxX, boxY, 40, 40);
                 }
             }
         }
