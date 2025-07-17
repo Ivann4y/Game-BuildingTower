@@ -7,7 +7,7 @@ import java.util.*;
 public class CityManager {
     public Map<Point, FinishedBuilding> cityGrid = new HashMap<>();
     public Map<Point, List<Point>> cityAdjacencyGraph = new HashMap<>();
-    public final int CITY_WIDTH=5, CITY_HEIGHT=1;
+    public final int CITY_WIDTH=5, CITY_HEIGHT=4;
     public Point nextCityPlot = new Point(0,0);
 
     public CityManager() { buildGraph(); }
